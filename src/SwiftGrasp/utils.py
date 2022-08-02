@@ -11,6 +11,59 @@ from causalimpact import CausalImpact
 
 
 class CheckTicker:
+    """
+    A class to check whether the input ticker has the correct data
+    type and whether it's a valid ticker that can be used to 
+    retrieve financial statement data and/or stock data.
+
+    It also has the functionality to get the ticker's first trade 
+    date if the ticker is valid and has stock data.
+
+    Parameters
+    ----------
+    ticker : str
+        The input ticker object to be validated on.
+    type : str, optional
+        A parameter to specify what types of validation that the 
+        ticker will be checked. It can only be "statement",
+        "stock" or "both". 
+        If "statement", it'll check whether the ticker has 
+        financial statement data.
+        If "stock", it will check whether the ticker has the
+        stock price data.
+        If "both", it will check whether it has financial
+        statement data and also check for stock data.
+        By default "statement".
+
+    Examples
+    --------
+    Check whether the ticker is valid and has financial
+    statement data:
+
+    >>> ticker = 'AAPL'
+    >>> ct = CheckTicker(ticker)
+    >>> ct.has_statement
+    True
+
+    Note that the parameter has_stock would be False
+    but that's not necessarily mean that the ticker
+    does not have stock data. It's just unchecked.
+
+    Check whether the ticker is valid and has the
+    financial statement data and/or the stock data.
+
+    >>> ticker = '^GSPC'
+    >>> ct = CheckTicker(ticker, type = 'both')
+    >>> ct.has_statement
+    False
+    >>> ct.has_stock
+    True
+
+    You can also get the first trade date of the
+    ticker:
+    >>> ct.get_first_trade_date()
+    '1927-12-30'
+    """
     def __init__(self, ticker:str, type:str = 'statement') -> None:
         self.ticker = ticker
         self._yf = None
@@ -23,27 +76,76 @@ class CheckTicker:
         self._today_prices = None
         self._validate(type)
 
-    def _validate_dtype(self):
+    def _validate_dtype_str(self):
+        """
+        Validate the data type of the input ticker object.
+
+        Raises
+        ------
+        TypeError
+            * If the input is not string type
+        """
         if not isinstance(self.ticker, str):
             raise TypeError("Ticker has to be string type.")
     
     def _validate_statement(self):
-        _tst = self._yf.get_financial_stmts(frequency = 'Quarterly', statement_type = 'income')
+        """
+        Check whether the ticker has financial statement data.
+        """
+        _tst = self._yf.get_financial_stmts(
+            frequency = 'Quarterly', 
+            statement_type = 'income'
+            )
         if list(_tst.values())[0][self.ticker] is not None:
             self.has_statement = True
 
     def _validate_stock(self):
+        """
+        Check whether the ticker has stock price data.
+        """
         today = datetime.datetime.today()
         days_ago = today - relativedelta(days=8)
-        self._today_prices = self._yf.get_historical_price_data(days_ago.strftime('%Y-%m-%d'), today.strftime('%Y-%m-%d'), 'weekly')
+        self._today_prices = self._yf.get_historical_price_data(
+            days_ago.strftime('%Y-%m-%d'), 
+            today.strftime('%Y-%m-%d'), 
+            'weekly'
+            )
         
-        #?? In what circumstances will eventsData is the only key and there're some data in eventsData?
-        #?? because if no circumstances like that, won't need the latter condition
-        if len(self._today_prices[self.ticker].keys()) > 1 or len(self._today_prices[self.ticker]['eventsData'])>0 :
+        #?? In what circumstances will eventsData is the only key 
+        # and there're some data in eventsData? because if no 
+        # circumstances like that, won't need the latter condition
+        if len(self._today_prices[self.ticker].keys()) > 1 or \
+            len(self._today_prices[self.ticker]['eventsData'])>0 :
             self.has_stock = True
         
     def _validate(self, type:str):
-        self._validate_dtype()
+        """
+        Main function to check whether the ticker input
+        is correct data type, and if so, whether it's 
+        valid and has financial statement data and/or
+        stock price data.
+
+        Parameters
+        ----------
+        type : str
+            A parameter to specify what types of validation that the 
+            ticker will be checked. It can only be "statement",
+            "stock" or "both". 
+            If "statement", it'll check whether the ticker has 
+            financial statement data.
+            If "stock", it will check whether the ticker has the
+            stock price data.
+            If "both", it will check whether it has financial
+            statement data and also check for stock data.
+            By default "statement".
+
+        Raises
+        ------
+        ValueError
+            If the parameter 'type' is not one of the value of 
+            'statement','stock','both'.
+        """
+        self._validate_dtype_str()
         
         self._yf = YahooFinancials(self.ticker)
 
@@ -52,21 +154,79 @@ class CheckTicker:
         if type == 'stock' or type == 'both':
             self._validate_stock()
         if type not in ('statement','stock','both'):
-            raise ValueError("Parameter type can only be 'statement', 'stock' or 'both'.")
+            raise ValueError("Parameter type can only be \
+                'statement', 'stock' or 'both'.")
         #ToDo [future]: check whether ticker already in the databse
 
     def _pull_first_trade_date(self):
+        """
+        Pull the first trade date if the ticker has stock 
+        prices data.
+        """
         if self._today_prices is None:
             self._validate(type='stock')
-        self.first_trade_date = self._today_prices[self.ticker]['firstTradeDate']['formatted_date'] 
+        if self.has_stock is True:
+            self.first_trade_date = self._today_prices[
+                self.ticker
+                ]['firstTradeDate']['formatted_date'] 
         
     def get_first_trade_date(self):
+        """
+        Get the first trade date of this ticker.
+
+        Returns
+        -------
+        str or None
+            If the ticker has stock data, then it'll
+            return a string in the format of 
+            YYYY-MM-DD.
+            If the ticker doesn't have stock data,
+            it'll return None.
+        """
         if self.first_trade_date is None:
             self._pull_first_trade_date()
         
         return self.first_trade_date
 
 class FinancialStatementData:
+    """
+    Main class to pull and format the financial statement data,
+    including balance sheet, income statement, and cash flow 
+    statement data.
+
+    Parameters
+    ----------
+    ticker : str
+        A string that represents the ticker of the company.
+    frequency : Union[str,None], optional
+        The frequency of the financial statement data, it can only
+        be either 'quarterly' or 'annual' or None.
+        By default None. If None, it will be 'quarterly'.
+
+    Examples
+    --------
+    Pull the quarterly balance sheet dataframe:
+
+    >>> ticker = 'AAPL'
+    >>> fsd = FinancialStatementData(ticker)
+    >>> df1 = fsd.get_balance_sheet()
+
+    Get the income statement dataframe:
+    >>> df2 = fsd.get_income_statement()
+
+    Get the cash flow statement dataframe:
+    >>> df3 = fsd.get_cash_statement()
+
+    Get the merged dataframe that has all financial statement data:
+
+    >>> df4 = fsd.get_all_data()
+
+    Pull the annual financial statement data of all:
+
+    >>> ticker = 'AMZN'
+    >>> fsd = FinancialStatementData(ticker, frequency = 'annual')
+    >>> df = fsd.get_all_data()
+    """
     __table_prefix_dict__ = {
         'balance':'balanceSheet'
         ,'income':'incomeStatement'
@@ -77,12 +237,12 @@ class FinancialStatementData:
         ,ticker:str
         ,frequency:Union[str,None] = None
         ) -> None:
-        
         ct = CheckTicker(ticker, type = 'statement')
         if ct.has_statement:
             self.ticker = ticker
         else:
-            raise ValueError(f"This ticker {ticker} doesn't have financial statement data in sources.")
+            raise ValueError(f"This ticker {ticker} doesn't have \
+                financial statement data in sources.")
         
         self.frequency = self._validate_input_frequency(frequency)
         self._balance = None
@@ -91,25 +251,62 @@ class FinancialStatementData:
         self._df_merge = None
         self._colname_date = 'formatted_date'
         
-        self._yf = YahooFinancials(self.ticker)
+        self._yf = ct._yf
         
         self._pull_data()
         self._merge_data()
         
     def _pull_data(self):
+        """
+        A wrapper function to pull the balance sheet, the income
+        statement, and the cash flow statement data.
+        """
         self._balance = self._format_financial_data('balance')
         self._income = self._format_financial_data('income')
         self._cash = self._format_financial_data('cash')
     
     def _merge_data(self):
+        """
+        Process the duplicated columns from the financial dataframes
+        and merge them into one dataframe.
+        """
         self._income = self._drop_dup(self._balance, self._income)
         self._cash = self._drop_dup(self._balance, self._cash)
         self._cash = self._drop_dup(self._income, self._cash)
 
-        self._df_merge = self._balance.merge(self._income, on=self._colname_date, how='outer')
-        self._df_merge = self._df_merge.merge(self._cash, on=self._colname_date, how='outer')
+        self._df_merge = self._balance.merge(
+            self._income, 
+            on=self._colname_date, 
+            how='outer'
+            )
+        self._df_merge = self._df_merge.merge(
+            self._cash, 
+            on=self._colname_date, 
+            how='outer'
+            )
         
     def _drop_dup(self, df1:pd.DataFrame, df2:pd.DataFrame):
+        """
+        Functionality to drop the duplicated columns given by the
+        two input dataframes.
+
+        Only the second dataframe will drop the duplicated columns.
+
+        Parameters
+        ----------
+        df1 : pd.DataFrame
+            The first dataframe to check the duplicated columns with
+            the second dataframe.
+        df2 : pd.DataFrame
+            The second dataframe to check the duplicated columns with
+            the first dataframe.
+
+        Returns
+        -------
+        pd.DataFrame
+            The second dataframe that dropped the duplicated columns,
+            if there're any.
+        """
         dup_list = list(set(df1.columns) & set(df2.columns))
         
         if len(dup_list)>1:
@@ -119,6 +316,19 @@ class FinancialStatementData:
             return df2
 
     def _get_table_suffix(self):
+        """
+        Generate the suffix of the json key name.
+
+        The quarterly financial statement data json object usually
+        has 'Quarterly' suffix in its json keys, whereas the annual
+        financial statement data json object usually wouldn't have
+        any suffix to indicate the frequency in the json keys.
+
+        Returns
+        -------
+        str
+            Suffix of the financial data json object keys.
+        """
         if self.frequency == 'quarterly':
             return 'Quarterly'
         else:
@@ -126,11 +336,47 @@ class FinancialStatementData:
             return ''
 
     def _get_json_header_name(self, abbr:str):
+        """
+        Compile the full json header name, given by what type of
+        financial data it is (i.e., 'balance', 'income', 'cash'),
+        and by the frequency of the financial statement data (i.e.,
+        quarterly or annual).
+
+        Parameters
+        ----------
+        abbr : str
+            The abbreviation of what type of the financial statement
+            data it it, it can only be one of the keys of 
+            self.__table_prefix_dict__
+
+        Returns
+        -------
+        str
+            The full json header name
+        """
         if abbr in self.__table_prefix_dict__.keys():
             suf = self._get_table_suffix()
             return self.__table_prefix_dict__.get(abbr)+'History'+suf
     
     def _format_financial_data(self, abbr:str):
+        """
+        Pull the financial statement data from YahooFinancials
+        and format the raw json data format to be the desired
+        pandas dataframe output.
+
+        Parameters
+        ----------
+        abbr : str
+            The abbreviation of what type of the financial statement
+            data it it, it can only be one of the keys of 
+            self.__table_prefix_dict__
+
+        Returns
+        -------
+        pd.DataFrame
+            A pandas dataframe that has the corresponding financial
+            statement data.
+        """
         jsn = self._yf.get_financial_stmts(frequency = self.frequency, statement_type = abbr)
 
         result_list = []
@@ -147,6 +393,34 @@ class FinancialStatementData:
 
     @staticmethod
     def _validate_input_frequency(obj):
+        """
+        Validate the input frequency parameter.
+        
+        It should be either None or str type.
+        If None, it will be 'quarterly'.
+        If it's str type, it can only be either 'annual' or
+        'quarterly'.
+
+        Parameters
+        ----------
+        obj : Any
+            The input object to be validated on.
+            Here specifically it's the 'frequency' parameter.
+
+        Returns
+        -------
+        str
+            The validated frequency parameter if the input object
+            is valid.
+
+        Raises
+        ------
+        TypeError
+            * If the input is not None and it's not str type.
+        ValueError
+            * If the input is str type but is neither 'quarterly' 
+              nor 'annual'
+        """
         if obj is None:
             return "quarterly"
         elif not isinstance(obj, str):
@@ -154,18 +428,55 @@ class FinancialStatementData:
         elif obj in ('annual','quarterly'):
             return obj
         else:
-            return ValueError("The input string has to be either 'quarterly" or 'annual.')
+            return ValueError("The input string has to be either 'quarterly or 'annual'.")
     
     def get_balance_sheet(self):
+        """
+        Get the dataframe that contains the balance sheet data.
+
+        Returns
+        -------
+        pd.DataFrame
+            A dataframe that contains the balance sheet data.
+        """
         return self._balance
     
     def get_income_statement(self):
+        """
+        Get the dataframe that contains the income statement data.
+
+        Returns
+        -------
+        pd.DataFrame
+            A dataframe that contains the income statement data.
+        """
         return self._income
     
     def get_cash_statement(self):
+        """
+        Get the dataframe that contains the cash flow statement 
+        data.
+
+        Returns
+        -------
+        pd.DataFrame
+            A dataframe that contains the cash flow statement 
+            data.
+        """
         return self._cash
 
     def get_all_data(self):
+        """
+        Get the dataframe that contains all the financial statement 
+        data, including balance sheet, income statement, and cash
+        flow statement data.
+
+        Returns
+        -------
+        pd.DataFrame
+            A dataframe that contains all the financial statement 
+            data.
+        """
         return self._df_merge
 
 class StockData:
@@ -326,8 +637,8 @@ class StructuralChange:
 
         self._df_summary = pd.concat(res_list, axis=1).T.set_index('change_date')
 
-    def plot(self, dt:str):
-        self._ci_dict[dt].plot()
+    def plot(self, dt:str, show:bool = True):
+        self._ci_dict[dt].plot(show = show)
 
 # class FactPlots:
 #     def __init__(self
