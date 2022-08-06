@@ -27,8 +27,10 @@ from bokeh.palettes import Category10
 from time import mktime
 from datetime import datetime as dt
 
-def line_plots(df, col_x, cols_y, cols_y2:list = None,title="Line charts",
-            xRange:Range1d = None,yRange: Range1d = None, xlabel='Time',width=600, height=500):
+def line_plots(df, col_x, cols_y, cols_y2:list = None,
+    title="Line charts", xRange:Range1d = None,
+    yRange: Range1d = None, xlabel='Time',width=600, height=500
+    ):
     source = ColumnDataSource(data=df)
     p = figure(title=title, tools='hover',x_axis_type='datetime',width=width, height=height)
 

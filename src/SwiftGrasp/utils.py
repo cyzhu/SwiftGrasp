@@ -65,7 +65,7 @@ class CheckTicker:
     '1927-12-30'
     """
     def __init__(self, ticker:str, type:str = 'statement') -> None:
-        self.ticker = _validate_type_str(ticker)
+        self.ticker = _validate_type_str(ticker).upper()
         self._yf = None
         
         self.first_trade_date = None
@@ -225,7 +225,7 @@ class FinancialStatementData:
         ) -> None:
         ct = CheckTicker(ticker, type = 'statement')
         if ct.has_statement:
-            self.ticker = ticker
+            self.ticker = ct.ticker
         else:
             raise ValueError(f"This ticker {ticker} doesn't have \
                 financial statement data in sources.")
@@ -531,7 +531,7 @@ class StockData:
         ) -> None:
         ct = CheckTicker(ticker, type='stock')
         if ct.has_stock:
-            self.ticker = ticker
+            self.ticker = ct.ticker
         else:
             raise ValueError(f"This ticker {ticker} doesn't have \
                 stock data in sources.")

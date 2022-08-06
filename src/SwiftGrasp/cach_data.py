@@ -41,7 +41,10 @@ def get_stock(ticker, fsd):
 
     return df_stock_fill, change_dt_list
 
-def cach_struc_chg(ticker,df_stock_fill, change_dt_list,frequency:str = 'Q'):
+def cach_struc_chg(ticker,df_stock_fill, 
+    change_dt_list,
+    frequency:str = 'Q'
+    ):
     sc = StructuralChange(df_stock_fill, change_dt_list)
     sc.analyze()
 

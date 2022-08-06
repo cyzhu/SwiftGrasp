@@ -24,3 +24,4 @@ A web app to help you quickly digest the key financial statement information and
 * ^Maybe create a database to store some calculated data will be helpful to the first bullet point.
 * Add analytic support for financial statement date (hopefully find more data).
 * Deploy to Heroku.
+* Consider adding fuzzy match feature on user text input.

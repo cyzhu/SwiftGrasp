@@ -34,6 +34,7 @@ st.write("Disclaimer: The Content is for informational purposes \
 st.text("\n")
 
 st.subheader('1. Input a ticker here')
+# get user input
 st.write("Choose one of the two options below to start.")
 st.markdown("_Notes: If you have inputs on both, the text input \
     from **Option 2** will be used._")
@@ -60,27 +61,29 @@ else:
 # check validaty of the ticker
 ct = CheckTicker(ticker, type='both')
 
+ticker = ct.ticker
+
 if not (ct.has_stock or ct.has_statement):
-    raise ValueError(f"This ticker {ticker} doesn't have any data.\
-        Please check the spelling or choose another ticker.")
-
-first_trade_date = ct.get_first_trade_date()
-
-if ct.has_stock:
-    has_stock = 'Yes'
+    st.markdown(f"_This ticker {ticker} doesn't have any data.\
+        Please check the spelling or choose another ticker._")
 else:
-    has_stock = 'No'
+    first_trade_date = ct.get_first_trade_date()
 
-if ct.has_statement:
-    has_statement = 'Yes'
-else:
-    has_statement = 'No'
+    if ct.has_stock:
+        has_stock = 'Yes'
+    else:
+        has_stock = 'No'
 
-st.markdown("#### Request summary")
-st.markdown(f"You chose ticker **{ticker}**")
-st.markdown(f"* Stock data: {has_stock}")
-st.markdown(f"* Statement data: {has_statement}")
-st.markdown(f"* First trade date: {first_trade_date}")
+    if ct.has_statement:
+        has_statement = 'Yes'
+    else:
+        has_statement = 'No'
+
+    st.markdown("#### Request summary")
+    st.markdown(f"You chose ticker **{ticker}**")
+    st.markdown(f"* Stock data: {has_stock}")
+    st.markdown(f"* Statement data: {has_statement}")
+    st.markdown(f"* First trade date: {first_trade_date}")
 
 st.subheader('2. Financial statement data')
 
@@ -91,6 +94,7 @@ def load_data(filename:str):
         as pf:
         obj = pickle.load(pf)
     return obj
+
 if ct.has_statement:
     fd_frequency = st.radio(
             "Choose the frequency for the financial statement data",
@@ -209,7 +213,6 @@ if ct.has_stock:
 else:
     st.markdown("_The ticker you chose doesn't have stock \
         data. Therefore nothing will be shown in this section._")
-
 
 
 st.subheader('4. Structural change - causal inference')
