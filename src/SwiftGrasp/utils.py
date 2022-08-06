@@ -65,7 +65,7 @@ class CheckTicker:
     '1927-12-30'
     """
     def __init__(self, ticker:str, type:str = 'statement') -> None:
-        self.ticker = ticker
+        self.ticker = _validate_type_str(ticker)
         self._yf = None
         
         self.first_trade_date = None
@@ -76,18 +76,6 @@ class CheckTicker:
         self._today_prices = None
         self._validate(type)
 
-    def _validate_dtype_str(self):
-        """
-        Validate the data type of the input ticker object.
-
-        Raises
-        ------
-        TypeError
-            * If the input is not string type
-        """
-        if not isinstance(self.ticker, str):
-            raise TypeError("Ticker has to be string type.")
-    
     def _validate_statement(self):
         """
         Check whether the ticker has financial statement data.
@@ -144,9 +132,7 @@ class CheckTicker:
         ValueError
             If the parameter 'type' is not one of the value of 
             'statement','stock','both'.
-        """
-        self._validate_dtype_str()
-        
+        """        
         self._yf = YahooFinancials(self.ticker)
 
         if type == 'statement' or type == 'both':
@@ -480,13 +466,69 @@ class FinancialStatementData:
         return self._df_merge
 
 class StockData:
+    """
+    Main class to pull and format the stock data,
+    with start date, end date and frequency specified.
+
+    Parameters
+    ----------
+    ticker : str
+        A string that represents the ticker of the company.
+    start_date : Union[str, None], optional
+        A string that represents the start date of the stock
+        time series, in 'YYYY-MM-DD' format.
+        By default None, if None, it will be either three years
+        before today, or the first traded date of the ticker,
+        whichever comes later.
+    end_date : Union[str, None], optional
+        A string that represents the end date of the stock
+        time series, in 'YYYY-MM-DD' format.
+        By default None, if None, it will be today.
+    frequency : Union[str,None], optional
+        The frequency of the stock data, it can only
+        be 'daily', 'weekly', 'monthly' or None.
+        By default None. If None, it will be 'daily'.
+
+    Examples
+    --------
+    Pull the daily stock time series:
+
+    >>> ticker = 'AAPL'
+    >>> sd = StockData(ticker)
+    >>> df1 = sd.get_stock()
+
+    Get the dividend time series dataframe:
+    >>> df2 = sd.get_dividend()
+
+    Get the stock split info:
+    >>> df3 = sd.get_split()
+
+    Pull the weekly stock time series from 2021-01-04:
+
+    >>> sd = StockData(
+            ticker, 
+            start_date = '2021-01-04',
+            frequency='weekly'
+            )
+    >>> df1 = sd.get_stock()
+
+    Pull the monthly stock time series from 2021-01-04
+    to 2021-12-10:
+
+    >>> sd = StockData(
+            ticker, 
+            start_date = '2021-01-04',
+            end_date = '2021-12-10',
+            frequency='monthly'
+            )
+    >>> df1 = sd.get_stock()
+    """
     def __init__(self
         ,ticker:str
         ,start_date:Union[str, None] = None
         ,end_date:Union[str, None] = None
         ,frequency:Union[str, None] = None
         ) -> None:
-        
         ct = CheckTicker(ticker, type='stock')
         if ct.has_stock:
             self.ticker = ticker
@@ -507,7 +549,7 @@ class StockData:
         if end_date is None:
             self.end_date = today.strftime('%Y-%m-%d')
         else:
-            self.end_date = self._validate_date(end_date)
+            self.end_date = _validate_date(end_date)
         
         if start_date is None:
             # just make the default start time as 3 years ago for now
@@ -519,7 +561,7 @@ class StockData:
                 )
         else:
             self.start_date = max(
-                self._validate_date(start_date), 
+                _validate_date(start_date), 
                 self.first_trade_date
                 )
 
@@ -534,6 +576,9 @@ class StockData:
         self._colname_date = 'formatted_date'
 
     def _set_obj(self):
+        """
+        Pull the stock info from YahooFinancials object.
+        """
         self._stock_obj = self._yf.get_historical_price_data(
             self.start_date, 
             self.end_date, 
@@ -541,6 +586,9 @@ class StockData:
             )
 
     def _pull_stock(self):
+        """
+        Extract the stock info and format it to pandas dataframe.
+        """
         self._stock = pd.DataFrame(
             self._stock_obj[self.ticker]['prices']
             )
@@ -550,52 +598,105 @@ class StockData:
         #ToDo: down cast float64 to float32
     
     def _pull_dividend(self):
-        self._dividend = pd.DataFrame(self._stock_obj[self.ticker]['eventsData']['dividends']).transpose()
-        self._dividend[self._colname_date] = pd.to_datetime(self._dividend[self._colname_date])
-        self._dividend['amount'] = self._dividend['amount'].astype(np.float32)
+        """
+        Extract the dividend info and format it to pandas dataframe.
+        """
+        self._dividend = pd.DataFrame(
+            self._stock_obj[self.ticker]['eventsData']['dividends']
+            ).transpose()
+        self._dividend[self._colname_date] = pd.to_datetime(
+            self._dividend[self._colname_date]
+            )
+        self._dividend['amount'] = self._dividend[
+            'amount'
+            ].astype(np.float32)
 
     def _pull_split(self):
-        if len(self._stock_obj[self.ticker]['eventsData']['splits'])>0:
-            self._split = pd.DataFrame(self._stock_obj[self.ticker]['eventsData']['splits']).transpose()
-            self._split[self._colname_date] = pd.to_datetime(self._split[self._colname_date])
+        """
+        Extract the stock split info and format it to pandas 
+        dataframe.
+        """
+        if len(
+            self._stock_obj[self.ticker]['eventsData']['splits']
+            )>0:
+            self._split = pd.DataFrame(
+                self._stock_obj[self.ticker]['eventsData']['splits']
+                ).transpose()
+            self._split[self._colname_date] = pd.to_datetime(
+                self._split[self._colname_date]
+                )
         else:
-            warnings.warn(f"There're no split events in the specified timeframe ({self.start_date} to {self.end_date}).")
-
-    @staticmethod
-    def _validate_type_str(obj):
-        if not isinstance(obj, str):
-            raise TypeError(f"Input {obj} type must be str.")
-    
-    def _validate_date(self, obj):
-        self._validate_type_str(obj)
-        try:
-            _ = datetime.datetime.strptime(obj, '%Y-%m-%d')
-            return obj
-        except:
-            raise ValueError("Input {obj} value format must be YYYY-MM-DD.")
+            warnings.warn(f"There're no split events in the \
+                specified timeframe ({self.start_date} to \
+                    {self.end_date}).")
     
     def _validate_frequency(self, obj):
-        self._validate_type_str(obj)
+        """
+        Validate the data type being string and the value is
+        'daily', 'weekly', or 'monthly'.
+
+        Raises
+        ------
+        TypeError
+            * If the input is not one of 'daily', 'weekly', 
+              'monthly'
+        """
+        obj = _validate_type_str(obj)
         if obj not in ('daily', 'weekly', 'monthly'):
-            raise ValueError("Parameter frequency can only be one of the element of ('daily', 'weekly', 'monthly').")
+            raise ValueError("Parameter frequency can only be one \
+                of the element of ('daily', 'weekly', 'monthly').")
         else:
             return obj
 
     def _check_date_logic(self):
+        """
+        Make sure that the start date is no later than the end date.
+
+        Raises
+        ------
+        ValueError
+            If start_date is later than the end_date.
+        """
         if self.end_date < self.start_date:
-            raise ValueError(f"Start date (current value {self.start_date}) must be earlier than end date (current value {self.end_date}).")
+            raise ValueError(f"Start date (current value \
+                {self.start_date}) must be earlier than end date \
+                    (current value {self.end_date}).")
     
     def get_stock(self):
+        """
+        Get the dataframe that contains the stock time series.
+
+        Returns
+        -------
+        pd.DataFrame
+            A dataframe that contains the stock data.
+        """
         if self._stock is None:
             self._pull_stock()
         return self._stock
 
-    def get_devidend(self):
+    def get_dividend(self):
+        """
+        Get the dataframe that contains the dividend time series.
+
+        Returns
+        -------
+        pd.DataFrame
+            A dataframe that contains the dividend data.
+        """
         if self._dividend is None:
             self._pull_dividend()
         return self._dividend
 
     def get_split(self):
+        """
+        Get the dataframe that contains the stock split time series.
+
+        Returns
+        -------
+        pd.DataFrame
+            A dataframe that contains the stock split data.
+        """
         if self._split is None:
             self._pull_split()
         return self._split
@@ -661,3 +762,34 @@ def _validate_dtype_df(obj):
         raise TypeError(f"Input needs to be pandas DataFrame object. Received {type(obj)} instead.")
     else:
         return obj
+
+def _validate_type_str(obj):
+        """
+        Validate the data type being str.
+
+        Raises
+        ------
+        TypeError
+            * If the input is not string type
+        """
+        if not isinstance(obj, str):
+            raise TypeError(f"Input {obj} type must be str.")
+        else:
+            return obj
+
+def _validate_date(obj):
+    """
+    Validate the data type being str and in YYYY-MM-DD format.
+
+    Raises
+    ------
+    TypeError
+        * If the input is not in YYYY-MM-DD format.
+    """
+    obj = _validate_type_str(obj)
+    try:
+        _ = datetime.datetime.strptime(obj, '%Y-%m-%d')
+        return obj
+    except:
+        raise ValueError("Input {obj} value format must be \
+            YYYY-MM-DD.")

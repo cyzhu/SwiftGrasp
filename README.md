@@ -17,7 +17,7 @@ A web app to help you quickly digest the key financial statement information and
   * Drag plot
   * Input of what columns are of user's interest
   * Input of time range for data pulling and relationship calculation
-* Functionality to perform causual inference of whether there're statistical significant change by the statement posting date, achieved by Baysesian.
+* Functionality to perform causual inference of whether there're statistical significant change by the statement posting date, achieved by Bayesian structural time series model.
 * Front end interface by streamlit, deployed locally.
 ## ToDo
 * Need to create an auto system to calculate/update the structural baysesian time series.
