@@ -491,7 +491,8 @@ class StockData:
         if ct.has_stock:
             self.ticker = ticker
         else:
-            raise ValueError(f"This ticker {ticker} doesn't have stock data in sources.")
+            raise ValueError(f"This ticker {ticker} doesn't have \
+                stock data in sources.")
         
         self.first_trade_date = ct.get_first_trade_date()
         self._yf = ct._yf
@@ -512,9 +513,15 @@ class StockData:
             # just make the default start time as 3 years ago for now
             # or the first trade date, whichever is later
             three_yrs_ago = today - relativedelta(years=3)
-            self.start_date = max(three_yrs_ago.strftime('%Y-%m-%d'), self.first_trade_date)
+            self.start_date = max(
+                three_yrs_ago.strftime('%Y-%m-%d'), 
+                self.first_trade_date
+                )
         else:
-            self.start_date = max(self._validate_date(start_date), self.first_trade_date)
+            self.start_date = max(
+                self._validate_date(start_date), 
+                self.first_trade_date
+                )
 
         self._check_date_logic()
 
@@ -527,11 +534,19 @@ class StockData:
         self._colname_date = 'formatted_date'
 
     def _set_obj(self):
-        self._stock_obj = self._yf.get_historical_price_data(self.start_date, self.end_date, self.frequency)
+        self._stock_obj = self._yf.get_historical_price_data(
+            self.start_date, 
+            self.end_date, 
+            self.frequency
+            )
 
     def _pull_stock(self):
-        self._stock = pd.DataFrame(self._stock_obj[self.ticker]['prices'])
-        self._stock[self._colname_date] = pd.to_datetime(self._stock[self._colname_date])
+        self._stock = pd.DataFrame(
+            self._stock_obj[self.ticker]['prices']
+            )
+        self._stock[self._colname_date] = pd.to_datetime(
+            self._stock[self._colname_date]
+            )
         #ToDo: down cast float64 to float32
     
     def _pull_dividend(self):
