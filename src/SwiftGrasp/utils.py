@@ -655,27 +655,6 @@ class StructuralChange:
     def plot(self, dt:str, show:bool = True):
         self._ci_dict[dt].plot(show = show)
 
-# class FactPlots:
-#     def __init__(self
-#         ,df:pd.DataFrame
-#         ,datetime_col:str
-#         ,value_col:str
-#         ) -> None:
-#         self._df = _validate_dtype_df(df)
-#         self._datetime_col = self._validate_col_in_df(datetime_col)
-#         self._value_col = self._validate_col_in_df(value_col)
-    
-#     def _validate_col_in_df(self, col:str):
-#         if col in self._df.columns:
-#             return col
-#         else:
-#             raise ValueError(f"value_col (value {col}) not in dataframe columns.")
-
-#     def _process(self):
-#         raise NotImplementedError()
-
-#     def plot(self):
-#         raise NotImplementedError()
 
 def _validate_dtype_df(obj):
     if not isinstance(obj, pd.DataFrame):

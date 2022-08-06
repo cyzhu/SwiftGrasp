@@ -20,7 +20,7 @@ A web app to help you quickly digest the key financial statement information and
 * Functionality to perform causual inference of whether there're statistical significant change by the statement posting date, achieved by Baysesian.
 * Front end interface by streamlit, deployed locally.
 ## ToDo
-* Need to improve the performance of the app, especially when it's calculating the structural baysesian time series.
+* Need to create an auto system to calculate/update the structural baysesian time series.
 * ^Maybe create a database to store some calculated data will be helpful to the first bullet point.
 * Add analytic support for financial statement date (hopefully find more data).
 * Deploy to Heroku.

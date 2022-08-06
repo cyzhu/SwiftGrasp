@@ -8,7 +8,7 @@ import pandas as pd
 import numpy as np
 import os
 import pickle
-cach_folder = './cached'
+
 
 import warnings
 warnings.filterwarnings("ignore")
@@ -17,6 +17,11 @@ import sys
 sys.path.insert(0, '../src/SwiftGrasp')
 from utils import *
 from plot_helper import line_plots, line_bar
+
+cach_folder = './cached'
+# date colname is hard coded here, should think about
+# possible inconsistency in the future
+date_col = 'formatted_date'
 
 
 st.title("SwiftGrasp")
@@ -86,112 +91,131 @@ def load_data(filename:str):
         as pf:
         obj = pickle.load(pf)
     return obj
+if ct.has_statement:
+    fd_frequency = st.radio(
+            "Choose the frequency for the financial statement data",
+            ('quarterly', 'annual')
+            )
+    fd_frequency_dict = {
+        'quarterly':'Q'
+        ,'annual':'Y'
+        }
+    fd_frequency_abbr = fd_frequency_dict.get(fd_frequency)
+    
+    #ToDo: need to check irregular ticker name for file name
+    fname = f"fsd_{ticker}_{fd_frequency_abbr}"
+    if os.path.exists(os.path.join(cach_folder, f"{fname}.p")):
+        fsd = load_data(fname)
+    else:
+        fsd = FinancialStatementData(ticker, frequency=fd_frequency)
+        with open(os.path.join(cach_folder, f"{fname}.p"), 'wb') as pf:
+            pickle.dump(fsd,pf,protocol=4)
 
-#ToDo: need to check irregular ticker name for file name
-fname = f"fsd_{ticker}"
-if os.path.exists(os.path.join(cach_folder, f"{fname}.p")):
-    fsd = load_data(fname)
+    df_financial = fsd.get_all_data()
+
+    change_dt_list = df_financial[
+        date_col].dt.strftime('%Y-%m-%d').to_list()
+
+    st.write(df_financial)
+
+    # make some plots
+    options0=st.multiselect(label = 'Choose financial data to display:'
+                    ,options=[col for col in df_financial.columns 
+                        if col !=date_col]
+                    ,default = ['totalAssets','cash','netIncome'])
+
+    op10 = [col for col in options0 if max(df_financial[col]) > 1e6]
+    op20 = [col for col in options0 if max(df_financial[col]) <= 1e6]
+
+    st.bokeh_chart(
+        line_plots(df_financial,date_col,op10,op20), 
+        use_container_width=True
+    )
 else:
-    fsd = FinancialStatementData(ticker)
-    with open(os.path.join(cach_folder, f"{fname}.p"), 'wb') as pf:
-        pickle.dump(fsd,pf,protocol=4)
-
-df_financial = fsd.get_all_data()
-
-st.write(df_financial)
-
-# make some plots
-options0=st.multiselect(label = 'Choose financial data to display:'
-                ,options=[col for col in df_financial.columns 
-                    if col !=fsd._colname_date]
-                ,default = ['totalAssets','cash','netIncome'])
-
-op10 = [col for col in options0 if max(df_financial[col]) > 1e6]
-op20 = [col for col in options0 if max(df_financial[col]) <= 1e6]
-
-st.bokeh_chart(
-    line_plots(df_financial,fsd._colname_date,op10,op20), 
-    use_container_width=True
-)
+    change_dt_list = None
+    st.markdown("_The ticker you chose doesn't have financial statement \
+        data. Therefore nothing will be shown in this section._")
 
 st.subheader("3. Stock data")
 
-today = datetime.datetime.today().date()
-first_trade_date_format = datetime.datetime.strptime(
-    first_trade_date, 
-    '%Y-%m-%d').date()
+if ct.has_stock:
+    today = datetime.datetime.today().date()
+    first_trade_date_format = datetime.datetime.strptime(
+        first_trade_date, 
+        '%Y-%m-%d').date()
 
-start_time, end_time = st.slider("Select the time range (inclusive) \
-    of the stock:"
-    ,min_value = first_trade_date_format
-    ,max_value = today
-    ,value=(
-        max(today-relativedelta(years=3),first_trade_date_format),
-        today
+    start_time, end_time = st.slider("Select the time range (inclusive) \
+        of the stock:"
+        ,min_value = first_trade_date_format
+        ,max_value = today
+        ,value=(
+            max(today-relativedelta(years=3),first_trade_date_format),
+            today
+            )
         )
+
+    st.write("You selected datetime between:", start_time,' and ', 
+        end_time)
+
+    stock_frequency = st.radio(
+            "Choose the frequency for the stock data",
+            ('daily', 'weekly', 'monthly')
+            )
+    resample_dict = {
+        'daily':'D'
+        ,'weekly':'W'
+        ,'monthly':'MS'
+        }
+
+    sd = StockData(
+        ticker, 
+        start_date = start_time.strftime('%Y-%m-%d'),
+        end_date = end_time.strftime('%Y-%m-%d'), 
+        frequency = stock_frequency
+    )
+    df_stock_all = sd.get_stock()
+
+
+    # make some plots
+    options_stock=st.multiselect(label = 'Choose stock data to display:'
+                    ,options=['high','low','open','close','volume']
+                    ,default = ['open','close','volume'])
+
+    if 'volume' in options_stock:
+        col_y2 = 'volume'
+    else:
+        col_y2 = None
+    st.bokeh_chart(
+        line_bar(
+            df_stock_all,
+            date_col,
+            [col for col in options_stock if col != 'volume'],
+            col_y2,
+            title = 'Stock Info',
+            vline_list = change_dt_list
+            ), 
+        use_container_width=True
     )
 
-st.write("You selected datetime between:", start_time,' and ', 
-    end_time)
+    df_stock = df_stock_all.loc[:,[date_col,'close']]
 
-stock_frequency = st.radio(
-        "Choose the frequency for the stock data",
-        ('daily', 'weekly', 'monthly')
-        )
-resample_dict = {
-    'daily':'D'
-    ,'weekly':'W'
-    ,'monthly':'MS'
-    }
 
-sd = StockData(
-    ticker, 
-    start_date = start_time.strftime('%Y-%m-%d'),
-    end_date = end_time.strftime('%Y-%m-%d'), 
-    frequency = stock_frequency
-)
-df_stock_all = sd.get_stock()
-
-change_dt_list = df_financial[
-    fsd._colname_date].dt.strftime('%Y-%m-%d').to_list()
-
-# make some plots
-options_stock=st.multiselect(label = 'Choose stock data to display:'
-                ,options=['high','low','open','close','volume']
-                ,default = ['open','close','volume'])
-
-if 'volume' in options_stock:
-    col_y2 = 'volume'
+    df_stock_fill = df_stock.drop_duplicates(
+        subset=date_col, 
+        keep='last').set_index(date_col).sort_index()
+    df_stock_fill = df_stock_fill.resample(
+        resample_dict.get(stock_frequency)
+        ).fillna('nearest')
 else:
-    col_y2 = None
-st.bokeh_chart(
-    line_bar(
-        df_stock_all,
-        fsd._colname_date,
-        [col for col in options_stock if col != 'volume'],
-        col_y2,
-        title = 'Stock Info',
-        vline_list = change_dt_list
-        ), 
-    use_container_width=True
-)
-
-df_stock = df_stock_all.loc[:,[fsd._colname_date,'close']]
-
-
-df_stock_fill = df_stock.drop_duplicates(
-    subset=fsd._colname_date, 
-    keep='last').set_index(fsd._colname_date).sort_index()
-df_stock_fill = df_stock_fill.resample(
-    resample_dict.get(stock_frequency)
-    ).fillna('nearest')
+    st.markdown("_The ticker you chose doesn't have stock \
+        data. Therefore nothing will be shown in this section._")
 
 
 
 st.subheader('4. Structural change - causal inference')
 
 if ct.has_stock and ct.has_statement:
-    fname = f'struc_change_{ticker}_summary'
+    fname = f'struc_change_{ticker}_{fd_frequency_abbr}_summary'
     if os.path.exists(os.path.join(cach_folder, f"{fname}.p")):
         sc_summary = load_data(fname)
 
@@ -204,12 +228,8 @@ if ct.has_stock and ct.has_statement:
             ,options=change_dt_list
             )
 
-        fname = f'struc_change_{ticker}_fig{struc_chg_selectbox}'
-        if os.path.exists(os.path.join(cach_folder, f"{fname}.p")):
-            fig = load_data(fname)
-        else:
-            warnings.warn("Please submit a ticket to the contact.")
-
+        fname = f'struc_change_{ticker}_{fd_frequency_abbr}_fig{struc_chg_selectbox}'
+        fig = load_data(fname)
         st.pyplot(fig)
     else:
         st.markdown("_The ticker you chose hasn't been processed yet. \

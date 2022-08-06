@@ -4,17 +4,23 @@ import matplotlib.pyplot as plt
 from utils import *
 cach_folder = './cached'
 
+frequency_dict = {
+    'Q':'quarterly',
+    'Y':'annual',
+}
+
 def load_data(filename:str):
     with open(os.path.join(cach_folder, f"{filename}.p"), 'rb') as pf:
         obj = pickle.load(pf)
     return obj
 
-def get_fsd(ticker):
-    fname = f"fsd_{ticker}"
+def get_fsd(ticker,frequency:str ='Q'):
+    fname = f"fsd_{ticker}_{frequency}"
+
     if os.path.exists(os.path.join(cach_folder, f"{fname}.p")):
         fsd = load_data(fname)
     else:
-        fsd = FinancialStatementData(ticker)
+        fsd = FinancialStatementData(ticker,frequency_dict.get(frequency))
         with open(os.path.join(cach_folder, f"{fname}.p"), 'wb') as pf:
             pickle.dump(fsd,pf,protocol=4)
 
@@ -35,12 +41,12 @@ def get_stock(ticker, fsd):
 
     return df_stock_fill, change_dt_list
 
-def cach_struc_chg(ticker,df_stock_fill, change_dt_list):
+def cach_struc_chg(ticker,df_stock_fill, change_dt_list,frequency:str = 'Q'):
     sc = StructuralChange(df_stock_fill, change_dt_list)
     sc.analyze()
 
     # save summary
-    fname = f'struc_change_{ticker}_summary'
+    fname = f'struc_change_{ticker}_{frequency}_summary'
     with open(os.path.join(cach_folder, f"{fname}.p"), 'wb') as pf:
         pickle.dump(sc._df_summary,pf,protocol=4)
     
@@ -50,13 +56,14 @@ def cach_struc_chg(ticker,df_stock_fill, change_dt_list):
         ci_select.plot(show=False)
         fig = plt.gcf()
         
-        fname = f'struc_change_{ticker}_fig{td}'
+        fname = f'struc_change_{ticker}_{frequency}_fig{td}'
         with open(os.path.join(cach_folder, f"{fname}.p"), 'wb') as pf:
             pickle.dump(fig,pf,protocol=4)
 
 if __name__=='__main__':
-    ticker = 'MSFT'
-    
-    fsd = get_fsd(ticker)
-    df_stock_fill, change_dt_list = get_stock(ticker, fsd)
-    cach_struc_chg(ticker,df_stock_fill, change_dt_list)
+    for ticker in ('AAPL','AMZN'):
+        frequency = 'Y'
+
+        fsd = get_fsd(ticker, frequency)
+        df_stock_fill, change_dt_list = get_stock(ticker, fsd)
+        cach_struc_chg(ticker,df_stock_fill, change_dt_list,frequency)
