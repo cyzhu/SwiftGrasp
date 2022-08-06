@@ -2,7 +2,40 @@
 
 A web app to help you quickly digest the key financial statement information and the stock performance for a publicly traded company.
 
-## Completed
+## Installation Guide
+1. Install `poetry` if you don't have it yet
+```
+pip install poetry
+```
+2. Make sure that you're on the `base` environment if not already, you can do the command below to get to the `base` environment if you're on some other conda environment
+```
+conda deactivate
+```
+3. Create a new conda environment
+```
+conda create -n swift python=3.9
+```
+4. Activate the environment you just created
+```
+conda activate swift
+```
+5. Navigate to the unzipped `SwiftGraspWebApp` folder
+```
+cd ~/your/path/to/SwiftGraspWebApp
+```
+6. Install the dependencies by poetry
+```
+poetry install
+```
+7. Run the web app locally by
+```
+streamlit run src/SwiftGrasp/app.py
+```
+
+Now you should be able to see the web app up and running locally with the URL displayed on the terminal.
+
+## Project Status
+### Completed
 * Functionality to input ticker by pre set dropdown list
 * Functionality to input ticker by text input
 * Functionality to check whether ticker is valid
@@ -19,7 +52,7 @@ A web app to help you quickly digest the key financial statement information and
   * Input of time range for data pulling and relationship calculation
 * Functionality to perform causual inference of whether there're statistical significant change by the statement posting date, achieved by Bayesian structural time series model.
 * Front end interface by streamlit, deployed locally.
-## ToDo
+### ToDo
 * Need to create an auto system to calculate/update the structural baysesian time series.
 * ^Maybe create a database to store some calculated data will be helpful to the first bullet point.
 * Add analytic support for financial statement date (hopefully find more data).
