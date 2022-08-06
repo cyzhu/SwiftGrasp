@@ -702,6 +702,57 @@ class StockData:
         return self._split
 
 class StructuralChange:
+    """
+    Main class to calculate the bayesian structural time series 
+    model based on the stock time series and the financial
+    statement post date. The goal is to analyze whether there're
+    statistical significance on the changes of the stock price
+    from before and after each financial statement published info.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        A pandas dataframe that has the stock time series 
+        information. The index must be datetime information.
+        The datetime must also be resampled to fill in the
+        gaps between dates.
+    possible_date_list : List[str]
+        A list of possible dates that the causal changes should
+        be detected on.
+
+    Examples
+    --------
+    Get a summary information for a list of dates:
+
+    First generate some sample data
+    >>> ticker = 'AAPL'
+    >>> sd = StockData(ticker)
+    >>> df_stock = sd.get_stock()
+    
+    Do some filtering and resampling
+    >>> df_stock = df_stock.loc[:,[fsd._colname_date,'close']]
+    >>> df_stock_fill = df_stock.drop_duplicates(
+            subset=fsd._colname_date, 
+            keep='last'
+            ).set_index(
+                fsd._colname_date
+                ).sort_index()
+    >>> df_stock_fill = df_stock_fill.resample(
+            'D'
+            ).fillna('nearest')
+    
+    Specify the list of dates of interest
+    >>> change_dt_list = ['2022-02-03','2021-12-09']
+    
+    Start to use this class
+    >>> sc = StructuralChange(df_stock_fill, change_dt_list)
+    >>> sc.analyze()
+    >>> df_summary = sc.summary()
+
+    Plot the causal change plots:
+    >>> sc.plot(change_dt_list[0])
+    >>> sc.plot(change_dt_list[1])
+    """
     def __init__(self
         ,df:pd.DataFrame
         ,possible_date_list:List[str]
@@ -712,24 +763,36 @@ class StructuralChange:
         #?? Do I want to make sure that df only has one column?
         self.possible_date_list = possible_date_list
 
-        self._df_index_min = self._df.index.min().strftime("%Y-%m-%d")
-        self._df_index_max = self._df.index.max().strftime("%Y-%m-%d")
+        self._df_index_min = self._df.index.min().strftime(
+            "%Y-%m-%d"
+            )
+        self._df_index_max = self._df.index.max().strftime(
+            "%Y-%m-%d"
+            )
 
         self._df_summary= None
 
         self._ci_dict = {}
         
-    #     self._load_data()
-        
-    # def _load_data(self):
-    #     fs = FinancialStatementData(self.ticker)
-    #     self._f_data = fs.get_balance_sheet()
-        
-    #     sd = StockData(self.ticker)
-    #     self.s_data = sd.get_stock()
-    
     def _analyze_one_date(self, dt:str):
-        dt_m1 = (datetime.datetime.strptime(dt, '%Y-%m-%d') - datetime.timedelta(days=1)).strftime("%Y-%m-%d")
+        """
+        Construct the bayesian structural time series model
+        for one date of interest.
+
+        Parameters
+        ----------
+        dt : str
+            A string that represents a date of interest.
+            Must be YYYY-MM-DD format.
+
+        Returns
+        -------
+        pd.DataFrame
+            A pandas dataframe that records the key information
+            for the summary.
+        """
+        dt_m1 = (datetime.datetime.strptime(dt, '%Y-%m-%d') \
+            - datetime.timedelta(days=1)).strftime("%Y-%m-%d")
         if self._df_index_min < dt_m1 and self._df_index_max>dt:
             pre_period=[self._df_index_min, dt_m1]
             post_period=[dt, self._df_index_max]
@@ -745,37 +808,82 @@ class StructuralChange:
             return None
 
     def analyze(self):
+        """
+        Main function to iterate all dates from the list
+        and generate a summary dataframe.
+        """
         res_list = []
         for dt in self.possible_date_list:
             res = self._analyze_one_date(dt)
             if res is not None:
                 res_list.append(res)
 
-        self._df_summary = pd.concat(res_list, axis=1).T.set_index('change_date')
+        self._df_summary = pd.concat(
+            res_list, 
+            axis=1).T.set_index('change_date')
 
     def plot(self, dt:str, show:bool = True):
+        """
+        Produce the causal change plots by the date of interest.
+
+        Parameters
+        ----------
+        dt : str
+            A string that represents a date of interest.
+            Must be YYYY-MM-DD format.
+        show : bool, optional
+            Indicate whether to show the plot or not.
+            By default True and it will call plt.show()
+        """
         self._ci_dict[dt].plot(show = show)
+
+    def summary(self):
+        """
+        Return the summary info for all the possible dates of
+        interest.
+
+        Returns
+        -------
+        pd.DataFrame
+            A pandas dataframe that has the summary info for 
+            all the possible dates of interest.
+        """
+        if self._df_summary is None:
+            warnings.warn("No summary info yet, might want to call \
+                obj.analyze() first.")
+        else:
+            return self._df_summary
 
 
 def _validate_dtype_df(obj):
+    """
+    Validate the data type being pandas dataframe.
+
+    Raises
+    ------
+    TypeError
+        * If the input is not pandas dataframe type
+    """
     if not isinstance(obj, pd.DataFrame):
-        raise TypeError(f"Input needs to be pandas DataFrame object. Received {type(obj)} instead.")
+        raise TypeError(f"Input needs to be pandas DataFrame \
+            object. Received {type(obj)} instead.")
     else:
         return obj
 
 def _validate_type_str(obj):
-        """
-        Validate the data type being str.
+    """
+    Validate the data type being str.
 
-        Raises
-        ------
-        TypeError
-            * If the input is not string type
-        """
-        if not isinstance(obj, str):
-            raise TypeError(f"Input {obj} type must be str.")
-        else:
-            return obj
+    Raises
+    ------
+    TypeError
+        * If the input is not string type
+    """
+    if not isinstance(obj, str):
+        raise TypeError(f"Input {obj} type must be str. \
+            Received {type(obj)} instead.")
+    else:
+        return obj
 
 def _validate_date(obj):
     """
