@@ -55,7 +55,7 @@ def cach_struc_chg(ticker,df_stock_fill, change_dt_list):
             pickle.dump(fig,pf,protocol=4)
 
 if __name__=='__main__':
-    ticker = 'AMZN'
+    ticker = 'MSFT'
     
     fsd = get_fsd(ticker)
     df_stock_fill, change_dt_list = get_stock(ticker, fsd)

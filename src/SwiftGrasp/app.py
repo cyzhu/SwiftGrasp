@@ -16,7 +16,7 @@ warnings.filterwarnings("ignore")
 import sys
 sys.path.insert(0, '../src/SwiftGrasp')
 from utils import *
-from plot_helper import line_plots
+from plot_helper import line_plots, line_bar
 
 
 st.title("SwiftGrasp")
@@ -150,11 +150,33 @@ sd = StockData(
     end_date = end_time.strftime('%Y-%m-%d'), 
     frequency = stock_frequency
 )
-df_stock = sd.get_stock()
+df_stock_all = sd.get_stock()
 
-st.write(df_stock.head())
+change_dt_list = df_financial[
+    fsd._colname_date].dt.strftime('%Y-%m-%d').to_list()
 
-df_stock = df_stock.loc[:,[fsd._colname_date,'close']]
+# make some plots
+options_stock=st.multiselect(label = 'Choose stock data to display:'
+                ,options=['high','low','open','close','volume']
+                ,default = ['open','close','volume'])
+
+if 'volume' in options_stock:
+    col_y2 = 'volume'
+else:
+    col_y2 = None
+st.bokeh_chart(
+    line_bar(
+        df_stock_all,
+        fsd._colname_date,
+        [col for col in options_stock if col != 'volume'],
+        col_y2,
+        title = 'Stock Info',
+        vline_list = change_dt_list
+        ), 
+    use_container_width=True
+)
+
+df_stock = df_stock_all.loc[:,[fsd._colname_date,'close']]
 
 
 df_stock_fill = df_stock.drop_duplicates(
@@ -164,36 +186,41 @@ df_stock_fill = df_stock_fill.resample(
     resample_dict.get(stock_frequency)
     ).fillna('nearest')
 
-change_dt_list = df_financial[
-    fsd._colname_date].dt.strftime('%Y-%m-%d').to_list()
+
 
 st.subheader('4. Structural change - causal inference')
 
-
-fname = f'struc_change_{ticker}_summary'
-if os.path.exists(os.path.join(cach_folder, f"{fname}.p")):
-    sc_summary = load_data(fname)
-
-    st.write("Structural change summary")
-    st.write(sc_summary)
-
-    struc_chg_selectbox=st.selectbox(
-        label = 'Select a possible change \
-            date to view the plots'
-        ,options=change_dt_list
-        )
-
-    fname = f'struc_change_{ticker}_fig{struc_chg_selectbox}'
+if ct.has_stock and ct.has_statement:
+    fname = f'struc_change_{ticker}_summary'
     if os.path.exists(os.path.join(cach_folder, f"{fname}.p")):
-        fig = load_data(fname)
-    else:
-        warnings.warn("Please submit a ticket to the contact.")
+        sc_summary = load_data(fname)
 
-    st.pyplot(fig)
+        st.write("Structural change summary")
+        st.write(sc_summary)
+
+        struc_chg_selectbox=st.selectbox(
+            label = 'Select a possible change \
+                date to view the plots'
+            ,options=change_dt_list
+            )
+
+        fname = f'struc_change_{ticker}_fig{struc_chg_selectbox}'
+        if os.path.exists(os.path.join(cach_folder, f"{fname}.p")):
+            fig = load_data(fname)
+        else:
+            warnings.warn("Please submit a ticket to the contact.")
+
+        st.pyplot(fig)
+    else:
+        st.markdown("_The ticker you chose hasn't been processed yet. \
+                It was just submitted and should be ready in ~10 \
+                minutes. Please check again later._")
+        #ToDo: insert a request to process the data to database here
+        # currently it's mannualy run and saved in a manual manner
 else:
-    st.markdown("_The ticker you chose hasn't been processed yet. \
-            It was just submitted and should be ready in ~10 \
-            minutes. Please check again later._")
+    st.markdown("_The ticker you chose either not have stock data or \
+        not financial statement data or both. Therefore it won't have \
+        a analysis on the relationship of stock and financial statement._")
 
 
 st.subheader('Contact')
