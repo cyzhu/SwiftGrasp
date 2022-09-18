@@ -879,10 +879,10 @@ class FuzzyMatch:
     First generate some sample data
     >>> df = pd.DataFrame(
             {'Company Name':
-                ["American Airlines",
+                ["American Airlines Group, Inc.",
                 "Apple Inc.",
-                "Amazon",
-                "Alphabet"],
+                "Amazon.com, Inc.",
+                "Alphabet Inc."],
             'Ticker':
                 ["AAL",
                 "AAPL",
@@ -915,6 +915,22 @@ class FuzzyMatch:
             )
 
     def match(self, input_text: str, num_result: int = 3):
+        """Find the top matched results from the dataframe.
+
+        Parameters
+        ----------
+        input_text : str
+            The string to be matched for.
+        num_result : int, optional
+            The number of candidates you want to return.
+            By default 3
+
+        Returns
+        -------
+        pd.DataFrame
+            A pandas dataframe that contains the matching score, the top matched
+            candidates and its relavent info.
+        """
         res = process.extract(input_text, self.list_choices, limit=num_result)
         result = pd.DataFrame(res, columns=[self.match_by_col, "Matching Score"])
 
