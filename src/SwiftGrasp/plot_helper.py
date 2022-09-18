@@ -40,13 +40,15 @@ def line_plots(
     height=500,
 ):
     source = ColumnDataSource(data=df)
+    # fmt: off
     p = figure(
-        title=title, 
-        tools="hover", 
-        x_axis_type="datetime", 
-        width=width, 
+        title=title,
+        tools="hover",
+        x_axis_type="datetime",
+        width=width,
         height=height
     )
+    # fmt: on
 
     color_length = len(cols_y)
     if cols_y2:
@@ -114,9 +116,11 @@ def line_plots(
                 y2_start = floor(mm * 10) / 10.0
         else:
             y2_end = max(max(df[col]) for col in cols_y2)
+        # fmt: off
         p.extra_y_ranges = {
             "Percentage": Range1d(start=y2_start, end=y2_end)
-            }
+        }
+        # fmt: on
         # Adding the second axis to the plot.
         p.add_layout(LinearAxis(y_range_name="Percentage"), "right")
         for name, color in zip(cols_y2, cl[len(cols_y) :]):
@@ -172,13 +176,15 @@ def line_bar(
     vline_list: list = None,
 ):
     source = ColumnDataSource(data=df)
+    # fmt: off
     p = figure(
-        title=title, 
-        tools="hover", 
-        x_axis_type="datetime", 
-        width=width, 
+        title=title,
+        tools="hover",
+        x_axis_type="datetime",
+        width=width,
         height=height
     )
+    # fmt: on
 
     color_length = len(cols_y) + 1
 
@@ -270,9 +276,7 @@ def line_bar(
 
     if vline_list is not None:
         for vl in vline_list:
-            loc = mktime(
-                dt.strptime(vl, "%Y-%m-%d").timetuple()
-                ) * 1000
+            loc = mktime(dt.strptime(vl, "%Y-%m-%d").timetuple()) * 1000
             vline = Span(
                 location=loc,
                 dimension="height",
@@ -281,7 +285,7 @@ def line_bar(
                 line_width=2,
             )
             p.renderers.extend([vline])
-        # create an empty object to show the legend, 
+        # create an empty object to show the legend,
         # somehow not working anymore
         # see https://stackoverflow.com/a/60829528
         # p.line([], [], legend_label='Statement Date',

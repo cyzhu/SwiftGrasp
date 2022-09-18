@@ -23,10 +23,9 @@ def get_fsd(ticker, frequency: str = "Q"):
     if os.path.exists(os.path.join(cach_folder, f"{fname}.p")):
         fsd = load_data(fname)
     else:
-        fsd = FinancialStatementData(
-            ticker, 
-            frequency_dict.get(frequency)
-            )
+        fsd = FinancialStatementData(  # fmt: off
+            ticker, frequency_dict.get(frequency)  # fmt: off
+        )
         with open(os.path.join(cach_folder, f"{fname}.p"), "wb") as pf:
             pickle.dump(fsd, pf, protocol=4)
 
@@ -48,18 +47,21 @@ def get_stock(ticker, fsd):
     )
     df_stock_fill = df_stock_fill.resample("D").fillna("nearest")
 
-    change_dt_list = df_financial[
-        fsd._colname_date].dt.strftime("%Y-%m-%d").to_list()
+    change_dt_list = (
+        df_financial[fsd._colname_date]  # fmt: off
+        .dt.strftime("%Y-%m-%d")
+        .to_list()  # fmt: off
+    )  # fmt: off
 
     return df_stock_fill, change_dt_list
 
 
 def cach_struc_chg(
-    ticker, 
-    df_stock_fill, 
-    change_dt_list, 
-    frequency: str = "Q"
-    ):
+    ticker,  # fmt: off
+    df_stock_fill,  # fmt: off
+    change_dt_list,  # fmt: off
+    frequency: str = "Q",  # fmt: off
+):
     sc = StructuralChange(df_stock_fill, change_dt_list)
     sc.analyze()
 
@@ -75,8 +77,7 @@ def cach_struc_chg(
         fig = plt.gcf()
 
         fname = f"struc_change_{ticker}_{frequency}_fig{td}"
-        with open(
-            os.path.join(cach_folder, f"{fname}.p"), "wb") as pf:
+        with open(os.path.join(cach_folder, f"{fname}.p"), "wb") as pf:
             pickle.dump(fig, pf, protocol=4)
 
 
@@ -86,9 +87,4 @@ if __name__ == "__main__":
 
         fsd = get_fsd(ticker, frequency)
         df_stock_fill, change_dt_list = get_stock(ticker, fsd)
-        cach_struc_chg(
-            ticker, 
-            df_stock_fill, 
-            change_dt_list, 
-            frequency
-            )
+        cach_struc_chg(ticker, df_stock_fill, change_dt_list, frequency)

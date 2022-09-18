@@ -94,8 +94,7 @@ class CheckTicker:
         today = datetime.datetime.today()
         days_ago = today - relativedelta(days=8)
         self._today_prices = self._yf.get_historical_price_data(
-            days_ago.strftime("%Y-%m-%d"), today.strftime("%Y-%m-%d"), 
-            "weekly"
+            days_ago.strftime("%Y-%m-%d"), today.strftime("%Y-%m-%d"), "weekly"
         )
 
         # ?? In what circumstances will eventsData is the only key
@@ -155,8 +154,7 @@ class CheckTicker:
         if self._today_prices is None:
             self._validate(type="stock")
         if self.has_stock is True:
-            self.first_trade_date = self._today_prices[
-                self.ticker]["firstTradeDate"][
+            self.first_trade_date = self._today_prices[self.ticker]["firstTradeDate"][
                 "formatted_date"
             ]
 
@@ -225,11 +223,7 @@ class FinancialStatementData:
         "cash": "cashflowStatement",
     }
 
-    def __init__(
-        self, 
-        ticker: str, 
-        frequency: Union[str, None] = None
-        ) -> None:
+    def __init__(self, ticker: str, frequency: Union[str, None] = None) -> None:
         ct = CheckTicker(ticker, type="statement")
         if ct.has_statement:
             self.ticker = ct.ticker
@@ -347,7 +341,7 @@ class FinancialStatementData:
         """
         if abbr in self.__table_prefix_dict__.keys():
             suf = self._get_table_suffix()
-            return self.__table_prefix_dict__.get(abbr)+"History"+suf
+            return self.__table_prefix_dict__.get(abbr) + "History" + suf
 
     def _format_financial_data(self, abbr: str):
         """
@@ -376,13 +370,10 @@ class FinancialStatementData:
         header = self._get_json_header_name(abbr)
         obj = jsn[header][self.ticker]
         for i in range(len(obj)):
-            df_temp = pd.DataFrame(
-                obj[i].values(), index=obj[i].keys()).reset_index()
+            df_temp = pd.DataFrame(obj[i].values(), index=obj[i].keys()).reset_index()
 
-            df_temp.rename(
-                columns={"index": self._colname_date}, inplace=True)
-            df_temp[self._colname_date] = pd.to_datetime(
-                df_temp[self._colname_date])
+            df_temp.rename(columns={"index": self._colname_date}, inplace=True)
+            df_temp[self._colname_date] = pd.to_datetime(df_temp[self._colname_date])
             result_list.append(df_temp)
 
         return pd.concat(result_list)
@@ -420,8 +411,10 @@ class FinancialStatementData:
         if obj is None:
             return "quarterly"
         elif not isinstance(obj, str):
-            raise TypeError("Input needs to be either \
-                None or String type.")
+            raise TypeError(
+                "Input needs to be either \
+                None or String type."
+            )
         elif obj in ("annual", "quarterly"):
             return obj
         else:
@@ -574,15 +567,12 @@ class StockData:
             # just make the default start time as 3 years ago for now
             # or the first trade date, whichever is later
             three_yrs_ago = today - relativedelta(years=3)
+
             self.start_date = max(
-                three_yrs_ago.strftime("%Y-%m-%d"), 
-                self.first_trade_date
+                three_yrs_ago.strftime("%Y-%m-%d"), self.first_trade_date
             )
         else:
-            self.start_date = max(
-                _validate_date(start_date), 
-                self.first_trade_date
-            )
+            self.start_date = max(_validate_date(start_date), self.first_trade_date)
 
         self._check_date_logic()
 
@@ -606,8 +596,8 @@ class StockData:
         """
         Extract the stock info and format it to pandas dataframe.
         """
-        self._stock = pd.DataFrame(
-            self._stock_obj[self.ticker]["prices"])
+        self._stock = pd.DataFrame(self._stock_obj[self.ticker]["prices"])
+
         self._stock[self._colname_date] = pd.to_datetime(
             self._stock[self._colname_date]
         )
@@ -623,17 +613,14 @@ class StockData:
         self._dividend[self._colname_date] = pd.to_datetime(
             self._dividend[self._colname_date]
         )
-        self._dividend["amount"] = self._dividend[
-            "amount"].astype(np.float32)
+        self._dividend["amount"] = self._dividend["amount"].astype(np.float32)
 
     def _pull_split(self):
         """
         Extract the stock split info and format it to pandas
         dataframe.
         """
-        if len(
-            self._stock_obj[self.ticker]["eventsData"]["splits"]
-            ) > 0:
+        if len(self._stock_obj[self.ticker]["eventsData"]["splits"]) > 0:
             self._split = pd.DataFrame(
                 self._stock_obj[self.ticker]["eventsData"]["splits"]
             ).transpose()
@@ -776,11 +763,7 @@ class StructuralChange:
     >>> sc.plot(change_dt_list[1])
     """
 
-    def __init__(
-        self, 
-        df: pd.DataFrame, 
-        possible_date_list: List[str]
-        ) -> None:
+    def __init__(self, df: pd.DataFrame, possible_date_list: List[str]) -> None:
         self._df = _validate_dtype_df(df)
         # ToDo: check df index as datetime
         # ToDo: check date list is list of str
@@ -812,8 +795,7 @@ class StructuralChange:
             for the summary.
         """
         dt_m1 = (
-            datetime.datetime.strptime(dt, "%Y-%m-%d") \
-                - datetime.timedelta(days=1)
+            datetime.datetime.strptime(dt, "%Y-%m-%d") - datetime.timedelta(days=1)
         ).strftime("%Y-%m-%d")
         if self._df_index_min < dt_m1 and self._df_index_max > dt:
             pre_period = [self._df_index_min, dt_m1]
@@ -840,8 +822,7 @@ class StructuralChange:
             if res is not None:
                 res_list.append(res)
 
-        self._df_summary = pd.concat(
-            res_list, axis=1).T.set_index("change_date")
+        self._df_summary = pd.concat(res_list, axis=1).T.set_index("change_date")
 
     def plot(self, dt: str, show: bool = True):
         """
@@ -926,8 +907,7 @@ class FuzzyMatch:
         self.df_company = _validate_dtype_df(df)
         self.match_by_col = _validate_type_str(match_by_col)
         if match_by_col in self.df_company.columns:
-            self.list_choices = self.df_company[
-                self.match_by_col].to_list()
+            self.list_choices = self.df_company[self.match_by_col].to_list()
         else:
             raise ValueError(
                 f"Colname {self.match_by_col} does not exist \
@@ -935,16 +915,12 @@ class FuzzyMatch:
             )
 
     def match(self, input_text: str, num_result: int = 3):
-        res = process.extract(
-            input_text, self.list_choices, limit=num_result)
-        result = pd.DataFrame(
-            res, 
-            columns=[self.match_by_col, "Matching Score"]
-            )
-        return result.merge(
-            self.df_company, 
-            on=self.match_by_col, 
-            how="inner")
+        res = process.extract(input_text, self.list_choices, limit=num_result)
+        result = pd.DataFrame(res, columns=[self.match_by_col, "Matching Score"])
+
+        result = result.merge(self.df_company, on=self.match_by_col, how="inner")
+
+        return result
 
 
 def _validate_dtype_df(obj):
@@ -996,7 +972,7 @@ def _validate_date(obj):
     try:
         _ = datetime.datetime.strptime(obj, "%Y-%m-%d")
         return obj
-    except:
+    except:  # noqa: E722
         raise ValueError(
             "Input {obj} value format must be \
             YYYY-MM-DD."

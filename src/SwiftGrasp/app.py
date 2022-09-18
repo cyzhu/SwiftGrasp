@@ -13,11 +13,16 @@ import pickle
 import sys
 
 import warnings
+
 warnings.filterwarnings("ignore")
 
 sys.path.insert(0, "../src/SwiftGrasp")
-from utils import CheckTicker, FinancialStatementData, StockData
-from plot_helper import line_plots, line_bar
+from utils import (  # noqa: E402
+    CheckTicker,
+    FinancialStatementData,
+    StockData,  # fmt: off
+)
+from plot_helper import line_plots, line_bar  # noqa: E402
 
 cach_folder = "./cached"
 # date colname is hard coded here, should think about
@@ -95,12 +100,13 @@ if not (ct.has_stock or ct.has_statement):
 
     if fm is None:
         fm = pickle.load(
-            open(
-                os.path.join(
-                    "./src/SwiftGrasp/resources", 
-                    "fuzzy_match.p"), 
-                "rb"
-                )
+            open(  # fmt: off
+                os.path.join(  # fmt: off
+                    "./src/SwiftGrasp/resources",  # fmt: off
+                    "fuzzy_match.p",  # fmt: off
+                ),
+                "rb",
+            )
         )
 
     st.write(fm.match(ticker))
@@ -126,6 +132,7 @@ else:
 
 st.subheader("2. Financial statement data")
 
+
 # load data
 @st.cache(allow_output_mutation=True)
 def load_data(filename: str):
@@ -136,8 +143,9 @@ def load_data(filename: str):
 
 if ct.has_statement:
     fd_frequency = st.radio(
-        "Choose the frequency for the financial statement data", \
-            ("quarterly", "annual")
+        "Choose the frequency for the financial statement \
+            data",
+        ("quarterly", "annual"),
     )
     fd_frequency_dict = {"quarterly": "Q", "annual": "Y"}
     fd_frequency_abbr = fd_frequency_dict.get(fd_frequency)
@@ -153,26 +161,33 @@ if ct.has_statement:
 
     df_financial = fsd.get_all_data()
 
-    change_dt_list = df_financial[
-        date_col].dt.strftime("%Y-%m-%d").to_list()
+    # fmt: off
+    change_dt_list = (
+        df_financial[date_col].dt.strftime("%Y-%m-%d").to_list()
+    )
+    # fmt: on
 
     st.write(df_financial)
 
     # make some plots
+    # fmt: off
     options0 = st.multiselect(
         label="Choose financial data to display:",
-        options=[col for col in df_financial.columns \
-            if col != date_col],
+        options=[col for col in df_financial.columns
+                 if col != date_col],
         default=["totalAssets", "cash", "netIncome"],
     )
+    # fmt: on
 
     op10 = [col for col in options0 if max(df_financial[col]) > 1e6]
     op20 = [col for col in options0 if max(df_financial[col]) <= 1e6]
 
+    # fmt: off
     st.bokeh_chart(
-        line_plots(df_financial, date_col, op10, op20), 
+        line_plots(df_financial, date_col, op10, op20),
         use_container_width=True
     )
+    # fmt: on
 else:
     change_dt_list = None
     st.markdown(
@@ -189,26 +204,28 @@ if ct.has_stock:
         first_trade_date, "%Y-%m-%d"
     ).date()
 
+    # fmt: off
     start_time, end_time = st.slider(
         "Select the time range \
         (inclusive) of the stock:",
         min_value=first_trade_date_format,
         max_value=today,
         value=(
-            max(today - relativedelta(years=3), 
-                first_trade_date_format), 
+            max(today - relativedelta(years=3),
+                first_trade_date_format),
             today),
     )
 
-    st.write(
-        "You selected datetime between:", 
-        start_time, " and ", end_time
-        )
+    st.write("You selected datetime between:", start_time,
+             " and ", end_time
+             )
 
     stock_frequency = st.radio(
-        "Choose the frequency for the stock data", \
-            ("daily", "weekly", "monthly")
+        "Choose the frequency for the stock data",
+        ("daily", "weekly", "monthly")
     )
+    # fmt: on
+
     resample_dict = {"daily": "D", "weekly": "W", "monthly": "MS"}
 
     sd = StockData(
@@ -249,9 +266,12 @@ if ct.has_stock:
         .set_index(date_col)
         .sort_index()
     )
+    # fmt: off
     df_stock_fill = df_stock_fill.resample(
-        resample_dict.get(stock_frequency)
-        ).fillna("nearest")
+        resample_dict.get(stock_frequency)).fillna(
+        "nearest"
+    )
+    # fmt: on
 else:
     st.markdown(
         "_The ticker you chose doesn't have stock \
@@ -275,7 +295,11 @@ if ct.has_stock and ct.has_statement:
             options=change_dt_list,
         )
 
-        fname = f"struc_change_{ticker}_{fd_frequency_abbr}_fig{struc_chg_selectbox}"
+        # need to break this to two lines
+        # fmt: off
+        fname = f"struc_change_{ticker}_{fd_frequency_abbr}" \
+            + f"_fig{struc_chg_selectbox}"
+        # fmt: on
 
         fig = load_data(fname)
         st.pyplot(fig)

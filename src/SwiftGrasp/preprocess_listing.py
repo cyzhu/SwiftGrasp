@@ -16,7 +16,7 @@ def load_nasdaq():
 
 
 def load_other():
-    # nyse listing are totally contained by other-listed so no need 
+    # nyse listing are totally contained by other-listed so no need
     # to load
     filename = "other-listed.csv"
     df3 = pd.read_csv(os.path.join(folder_resource, filename))
@@ -37,7 +37,7 @@ def process_df(df1: pd.DataFrame, df2: pd.DataFrame):
     df["company name length"] = df["Company Name"].str.len()
     list_abbr_name = df.loc[
         df["company name length"] < 5, "Company Name"
-        ].to_list()
+    ].to_list()  # fmt: off
 
     full_set = set(list_abbr_name + list_dup_name)
 
@@ -54,13 +54,14 @@ if __name__ == "__main__":
     df3 = load_other()
     df = process_df(df1, df3)
     df.to_csv(
-        os.path.join(folder_resource, "processed_company_names.csv"), 
-        index=None)
+        os.path.join(folder_resource, "processed_company_names.csv"),
+        index=None,  # fmt: off
+    )
 
     fm = FuzzyMatch(df=df)
 
     pickle.dump(
-        fm, open(
-            os.path.join(folder_resource, "fuzzy_match.p"), "wb"
-            ), protocol=4
+        fm,
+        open(os.path.join(folder_resource, "fuzzy_match.p"), "wb"),
+        protocol=4,  # fmt: off
     )

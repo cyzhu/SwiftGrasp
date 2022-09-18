@@ -1,6 +1,6 @@
 repos:
   - repo: https://github.com/python/black.git
-    rev: 22.8.0
+    rev: 22.6.0
     hooks:
     -   id: black
         name: black
@@ -15,4 +15,4 @@ repos:
         entry: flake8
         language: python
         types: [python]
-        args: ['--max-line-length=72', '--ignore=E203,W503', 'exclude=*__init__*']
+        args: ['--max-line-length=88', '--ignore=E203,W503', 'exclude=*__init__*']
