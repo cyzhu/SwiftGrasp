@@ -1,5 +1,7 @@
 import pandas as pd
 import os
+from utils import FuzzyMatch
+import pickle
 
 folder_resource = "./src/SwiftGrasp/resources/"
 
@@ -34,6 +36,7 @@ def process_df(df1:pd.DataFrame, df2:pd.DataFrame):
     full_set = set(list_abbr_name+list_dup_name)
 
     df.loc[df['Company Name'].isin(full_set),'Company Name'] = df.loc[df['Company Name'].isin(full_set),'Security Name']
+    df.rename(columns = {'Symbol':'Ticker'}, inplace=True)
     
     return df.drop(['Security Name','company name length'], axis=1)
 
@@ -43,3 +46,9 @@ if __name__ == '__main__':
     df3 = load_other()
     df = process_df(df1, df3)
     df.to_csv(os.path.join(folder_resource,"processed_company_names.csv"), index=None)
+
+    fm = FuzzyMatch(
+        df = df
+        )
+    
+    pickle.dump(fm, open(os.path.join(folder_resource,"fuzzy_match.p"),"wb"),protocol=4)

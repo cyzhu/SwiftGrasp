@@ -15,7 +15,7 @@ warnings.filterwarnings("ignore")
 
 import sys
 sys.path.insert(0, '../src/SwiftGrasp')
-from utils import CheckTicker, FinancialStatementData, StockData, FuzzyMatch
+from utils import CheckTicker, FinancialStatementData, StockData
 from plot_helper import line_plots, line_bar
 
 cach_folder = './cached'
@@ -71,14 +71,13 @@ if not (ct.has_stock or ct.has_statement):
         Are you trying to find the tickers from below:_")
 
     if fm is None:
-        df_company = pd.read_csv(
-            os.path.join(
-                "./src/SwiftGrasp/resources",
-                "processed_company_names.csv"
+        fm = pickle.load(
+                open(os.path.join(
+                    "./src/SwiftGrasp/resources",
+                    "fuzzy_match.p"
+                    )
+                ,"rb"
                 )
-            )
-        fm = FuzzyMatch(
-            df = df_company
             )
     
     st.write(fm.match(ticker))
@@ -229,7 +228,6 @@ if ct.has_stock:
     )
 
     df_stock = df_stock_all.loc[:,[date_col,'close']]
-
 
     df_stock_fill = df_stock.drop_duplicates(
         subset=date_col, 
