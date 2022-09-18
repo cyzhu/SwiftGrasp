@@ -34,6 +34,12 @@ streamlit run src/SwiftGrasp/app.py
 
 Now you should be able to see the web app up and running locally with the URL displayed on the terminal.
 
+## Testing
+After making changes to the code, run below lines from the main directory.
+```
+python -m pytest --cov=SwiftGrasp tests/
+```
+
 ## Project Status
 ### Completed
 * Functionality to input ticker by pre set dropdown list

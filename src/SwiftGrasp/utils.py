@@ -855,14 +855,56 @@ class StructuralChange:
 
 
 class FuzzyMatch:
+    """
+    Main class to perform fuzzy match to the list of values given
+    by a column of the dataframe.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        A pandas dataframe that has the ticker and company name info.
+    match_by_col : str, optional
+        The colname that the values from which would be used to
+        perform the match. By default 'Company Name'.
+
+    Examples
+    --------
+    Get a summary information for a list of dates:
+
+    First generate some sample data
+    >>> df = pd.DataFrame(
+            {'Company Name':
+                ["American Airlines", 
+                "Apple Inc.", 
+                "Amazon", 
+                "Alphabet"],
+            'Ticker':
+                ["AAL",
+                "AAPL",
+                "AMZN",
+                "GOOGL"
+                ]
+            }
+        )
+    >>> fm = FuzzyMatch(df)
+    >>> df_res = fm.match("apple")
+    
+    This would return a dataframe with the company name,
+    ticker, and the match score scale 0-100 where 100
+    being the highest.
+    """
     def __init__(
         self, 
         df:pd.DataFrame,
         match_by_col:str = 'Company Name',
         ) -> None:
-        self.df_company = df
-        self.match_by_col = match_by_col
-        self.list_choices = self.df_company[self.match_by_col].to_list()
+        self.df_company = _validate_dtype_df(df)
+        self.match_by_col = _validate_type_str(match_by_col)
+        if match_by_col in self.df_company.columns:
+            self.list_choices = self.df_company[self.match_by_col].to_list()
+        else:
+            raise ValueError(f"Colname {self.match_by_col} does not exist \
+                in the input dataframe.")
     
     def match(self, input_text:str, num_result:int = 3):
         res = process.extract(input_text, self.list_choices, limit=num_result)
