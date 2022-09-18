@@ -9,13 +9,14 @@ import warnings
 from causalimpact import CausalImpact
 from thefuzz import process
 
+
 class CheckTicker:
     """
     A class to check whether the input ticker has the correct data
-    type and whether it's a valid ticker that can be used to 
+    type and whether it's a valid ticker that can be used to
     retrieve financial statement data and/or stock data.
 
-    It also has the functionality to get the ticker's first trade 
+    It also has the functionality to get the ticker's first trade
     date if the ticker is valid and has stock data.
 
     Parameters
@@ -23,10 +24,10 @@ class CheckTicker:
     ticker : str
         The input ticker object to be validated on.
     type : str, optional
-        A parameter to specify what types of validation that the 
+        A parameter to specify what types of validation that the
         ticker will be checked. It can only be "statement",
-        "stock" or "both". 
-        If "statement", it'll check whether the ticker has 
+        "stock" or "both".
+        If "statement", it'll check whether the ticker has
         financial statement data.
         If "stock", it will check whether the ticker has the
         stock price data.
@@ -63,15 +64,16 @@ class CheckTicker:
     >>> ct.get_first_trade_date()
     '1927-12-30'
     """
-    def __init__(self, ticker:str, type:str = 'statement') -> None:
+
+    def __init__(self, ticker: str, type: str = "statement") -> None:
         self.ticker = _validate_type_str(ticker).upper()
         self._yf = None
-        
+
         self.first_trade_date = None
-        
-        self.has_statement:bool = False
-        self.has_stock:bool = False
-        
+
+        self.has_statement: bool = False
+        self.has_stock: bool = False
+
         self._today_prices = None
         self._validate(type)
 
@@ -80,9 +82,8 @@ class CheckTicker:
         Check whether the ticker has financial statement data.
         """
         _tst = self._yf.get_financial_stmts(
-            frequency = 'Quarterly', 
-            statement_type = 'income'
-            )
+            frequency="Quarterly", statement_type="income"
+        )
         if list(_tst.values())[0][self.ticker] is not None:
             self.has_statement = True
 
@@ -93,32 +94,33 @@ class CheckTicker:
         today = datetime.datetime.today()
         days_ago = today - relativedelta(days=8)
         self._today_prices = self._yf.get_historical_price_data(
-            days_ago.strftime('%Y-%m-%d'), 
-            today.strftime('%Y-%m-%d'), 
-            'weekly'
-            )
-        
-        #?? In what circumstances will eventsData is the only key 
-        # and there're some data in eventsData? because if no 
+            days_ago.strftime("%Y-%m-%d"), today.strftime("%Y-%m-%d"), 
+            "weekly"
+        )
+
+        # ?? In what circumstances will eventsData is the only key
+        # and there're some data in eventsData? because if no
         # circumstances like that, won't need the latter condition
-        if len(self._today_prices[self.ticker].keys()) > 1 or \
-            len(self._today_prices[self.ticker]['eventsData'])>0 :
+        if (
+            len(self._today_prices[self.ticker].keys()) > 1
+            or len(self._today_prices[self.ticker]["eventsData"]) > 0
+        ):
             self.has_stock = True
-        
-    def _validate(self, type:str):
+
+    def _validate(self, type: str):
         """
         Main function to check whether the ticker input
-        is correct data type, and if so, whether it's 
+        is correct data type, and if so, whether it's
         valid and has financial statement data and/or
         stock price data.
 
         Parameters
         ----------
         type : str
-            A parameter to specify what types of validation that the 
+            A parameter to specify what types of validation that the
             ticker will be checked. It can only be "statement",
-            "stock" or "both". 
-            If "statement", it'll check whether the ticker has 
+            "stock" or "both".
+            If "statement", it'll check whether the ticker has
             financial statement data.
             If "stock", it will check whether the ticker has the
             stock price data.
@@ -129,32 +131,35 @@ class CheckTicker:
         Raises
         ------
         ValueError
-            If the parameter 'type' is not one of the value of 
+            If the parameter 'type' is not one of the value of
             'statement','stock','both'.
-        """        
+        """
         self._yf = YahooFinancials(self.ticker)
 
-        if type == 'statement' or type == 'both':
+        if type == "statement" or type == "both":
             self._validate_statement()
-        if type == 'stock' or type == 'both':
+        if type == "stock" or type == "both":
             self._validate_stock()
-        if type not in ('statement','stock','both'):
-            raise ValueError("Parameter type can only be \
-                'statement', 'stock' or 'both'.")
-        #ToDo [future]: check whether ticker already in the databse
+        if type not in ("statement", "stock", "both"):
+            raise ValueError(
+                "Parameter type can only be \
+                'statement', 'stock' or 'both'."
+            )
+        # ToDo [future]: check whether ticker already in the databse
 
     def _pull_first_trade_date(self):
         """
-        Pull the first trade date if the ticker has stock 
+        Pull the first trade date if the ticker has stock
         prices data.
         """
         if self._today_prices is None:
-            self._validate(type='stock')
+            self._validate(type="stock")
         if self.has_stock is True:
             self.first_trade_date = self._today_prices[
-                self.ticker
-                ]['firstTradeDate']['formatted_date'] 
-        
+                self.ticker]["firstTradeDate"][
+                "formatted_date"
+            ]
+
     def get_first_trade_date(self):
         """
         Get the first trade date of this ticker.
@@ -163,20 +168,21 @@ class CheckTicker:
         -------
         str or None
             If the ticker has stock data, then it'll
-            return a string in the format of 
+            return a string in the format of
             YYYY-MM-DD.
             If the ticker doesn't have stock data,
             it'll return None.
         """
         if self.first_trade_date is None:
             self._pull_first_trade_date()
-        
+
         return self.first_trade_date
+
 
 class FinancialStatementData:
     """
     Main class to pull and format the financial statement data,
-    including balance sheet, income statement, and cash flow 
+    including balance sheet, income statement, and cash flow
     statement data.
 
     Parameters
@@ -212,44 +218,48 @@ class FinancialStatementData:
     >>> fsd = FinancialStatementData(ticker, frequency = 'annual')
     >>> df = fsd.get_all_data()
     """
+
     __table_prefix_dict__ = {
-        'balance':'balanceSheet'
-        ,'income':'incomeStatement'
-        ,'cash':'cashflowStatement'
-        }
-    
-    def __init__(self
-        ,ticker:str
-        ,frequency:Union[str,None] = None
+        "balance": "balanceSheet",
+        "income": "incomeStatement",
+        "cash": "cashflowStatement",
+    }
+
+    def __init__(
+        self, 
+        ticker: str, 
+        frequency: Union[str, None] = None
         ) -> None:
-        ct = CheckTicker(ticker, type = 'statement')
+        ct = CheckTicker(ticker, type="statement")
         if ct.has_statement:
             self.ticker = ct.ticker
         else:
-            raise ValueError(f"This ticker {ticker} doesn't have \
-                financial statement data in sources.")
-        
+            raise ValueError(
+                f"This ticker {ticker} doesn't have \
+                financial statement data in sources."
+            )
+
         self.frequency = self._validate_input_frequency(frequency)
         self._balance = None
         self._income = None
         self._cash = None
         self._df_merge = None
-        self._colname_date = 'formatted_date'
-        
+        self._colname_date = "formatted_date"
+
         self._yf = ct._yf
-        
+
         self._pull_data()
         self._merge_data()
-        
+
     def _pull_data(self):
         """
         A wrapper function to pull the balance sheet, the income
         statement, and the cash flow statement data.
         """
-        self._balance = self._format_financial_data('balance')
-        self._income = self._format_financial_data('income')
-        self._cash = self._format_financial_data('cash')
-    
+        self._balance = self._format_financial_data("balance")
+        self._income = self._format_financial_data("income")
+        self._cash = self._format_financial_data("cash")
+
     def _merge_data(self):
         """
         Process the duplicated columns from the financial dataframes
@@ -260,17 +270,13 @@ class FinancialStatementData:
         self._cash = self._drop_dup(self._income, self._cash)
 
         self._df_merge = self._balance.merge(
-            self._income, 
-            on=self._colname_date, 
-            how='outer'
-            )
+            self._income, on=self._colname_date, how="outer"
+        )
         self._df_merge = self._df_merge.merge(
-            self._cash, 
-            on=self._colname_date, 
-            how='outer'
-            )
-        
-    def _drop_dup(self, df1:pd.DataFrame, df2:pd.DataFrame):
+            self._cash, on=self._colname_date, how="outer"
+        )
+
+    def _drop_dup(self, df1: pd.DataFrame, df2: pd.DataFrame):
         """
         Functionality to drop the duplicated columns given by the
         two input dataframes.
@@ -293,8 +299,8 @@ class FinancialStatementData:
             if there're any.
         """
         dup_list = list(set(df1.columns) & set(df2.columns))
-        
-        if len(dup_list)>1:
+
+        if len(dup_list) > 1:
             cols = [i for i in dup_list if i != self._colname_date]
             return df2.drop(cols, axis=1)
         else:
@@ -314,13 +320,13 @@ class FinancialStatementData:
         str
             Suffix of the financial data json object keys.
         """
-        if self.frequency == 'quarterly':
-            return 'Quarterly'
+        if self.frequency == "quarterly":
+            return "Quarterly"
         else:
             # if 'annual'
-            return ''
+            return ""
 
-    def _get_json_header_name(self, abbr:str):
+    def _get_json_header_name(self, abbr: str):
         """
         Compile the full json header name, given by what type of
         financial data it is (i.e., 'balance', 'income', 'cash'),
@@ -331,7 +337,7 @@ class FinancialStatementData:
         ----------
         abbr : str
             The abbreviation of what type of the financial statement
-            data it it, it can only be one of the keys of 
+            data it it, it can only be one of the keys of
             self.__table_prefix_dict__
 
         Returns
@@ -341,9 +347,9 @@ class FinancialStatementData:
         """
         if abbr in self.__table_prefix_dict__.keys():
             suf = self._get_table_suffix()
-            return self.__table_prefix_dict__.get(abbr)+'History'+suf
-    
-    def _format_financial_data(self, abbr:str):
+            return self.__table_prefix_dict__.get(abbr)+"History"+suf
+
+    def _format_financial_data(self, abbr: str):
         """
         Pull the financial statement data from YahooFinancials
         and format the raw json data format to be the desired
@@ -353,7 +359,7 @@ class FinancialStatementData:
         ----------
         abbr : str
             The abbreviation of what type of the financial statement
-            data it it, it can only be one of the keys of 
+            data it it, it can only be one of the keys of
             self.__table_prefix_dict__
 
         Returns
@@ -362,16 +368,21 @@ class FinancialStatementData:
             A pandas dataframe that has the corresponding financial
             statement data.
         """
-        jsn = self._yf.get_financial_stmts(frequency = self.frequency, statement_type = abbr)
+        jsn = self._yf.get_financial_stmts(
+            frequency=self.frequency, statement_type=abbr
+        )
 
         result_list = []
         header = self._get_json_header_name(abbr)
         obj = jsn[header][self.ticker]
         for i in range(len(obj)):
-            df_temp = pd.DataFrame(obj[i].values(), index = obj[i].keys()).reset_index()
-            
-            df_temp.rename(columns={'index':self._colname_date}, inplace=True)
-            df_temp[self._colname_date] = pd.to_datetime(df_temp[self._colname_date])
+            df_temp = pd.DataFrame(
+                obj[i].values(), index=obj[i].keys()).reset_index()
+
+            df_temp.rename(
+                columns={"index": self._colname_date}, inplace=True)
+            df_temp[self._colname_date] = pd.to_datetime(
+                df_temp[self._colname_date])
             result_list.append(df_temp)
 
         return pd.concat(result_list)
@@ -380,7 +391,7 @@ class FinancialStatementData:
     def _validate_input_frequency(obj):
         """
         Validate the input frequency parameter.
-        
+
         It should be either None or str type.
         If None, it will be 'quarterly'.
         If it's str type, it can only be either 'annual' or
@@ -403,18 +414,22 @@ class FinancialStatementData:
         TypeError
             * If the input is not None and it's not str type.
         ValueError
-            * If the input is str type but is neither 'quarterly' 
+            * If the input is str type but is neither 'quarterly'
               nor 'annual'
         """
         if obj is None:
             return "quarterly"
         elif not isinstance(obj, str):
-            raise TypeError("Input needs to be either None or String type.")
-        elif obj in ('annual','quarterly'):
+            raise TypeError("Input needs to be either \
+                None or String type.")
+        elif obj in ("annual", "quarterly"):
             return obj
         else:
-            return ValueError("The input string has to be either 'quarterly or 'annual'.")
-    
+            return ValueError(
+                "The input string has to be either \
+                    'quarterly or 'annual'."
+            )
+
     def get_balance_sheet(self):
         """
         Get the dataframe that contains the balance sheet data.
@@ -425,7 +440,7 @@ class FinancialStatementData:
             A dataframe that contains the balance sheet data.
         """
         return self._balance
-    
+
     def get_income_statement(self):
         """
         Get the dataframe that contains the income statement data.
@@ -436,33 +451,34 @@ class FinancialStatementData:
             A dataframe that contains the income statement data.
         """
         return self._income
-    
+
     def get_cash_statement(self):
         """
-        Get the dataframe that contains the cash flow statement 
+        Get the dataframe that contains the cash flow statement
         data.
 
         Returns
         -------
         pd.DataFrame
-            A dataframe that contains the cash flow statement 
+            A dataframe that contains the cash flow statement
             data.
         """
         return self._cash
 
     def get_all_data(self):
         """
-        Get the dataframe that contains all the financial statement 
+        Get the dataframe that contains all the financial statement
         data, including balance sheet, income statement, and cash
         flow statement data.
 
         Returns
         -------
         pd.DataFrame
-            A dataframe that contains all the financial statement 
+            A dataframe that contains all the financial statement
             data.
         """
         return self._df_merge
+
 
 class StockData:
     """
@@ -505,7 +521,7 @@ class StockData:
     Pull the weekly stock time series from 2021-01-04:
 
     >>> sd = StockData(
-            ticker, 
+            ticker,
             start_date = '2021-01-04',
             frequency='weekly'
             )
@@ -515,120 +531,122 @@ class StockData:
     to 2021-12-10:
 
     >>> sd = StockData(
-            ticker, 
+            ticker,
             start_date = '2021-01-04',
             end_date = '2021-12-10',
             frequency='monthly'
             )
     >>> df1 = sd.get_stock()
     """
-    def __init__(self
-        ,ticker:str
-        ,start_date:Union[str, None] = None
-        ,end_date:Union[str, None] = None
-        ,frequency:Union[str, None] = None
-        ) -> None:
-        ct = CheckTicker(ticker, type='stock')
+
+    def __init__(
+        self,
+        ticker: str,
+        start_date: Union[str, None] = None,
+        end_date: Union[str, None] = None,
+        frequency: Union[str, None] = None,
+    ) -> None:
+        ct = CheckTicker(ticker, type="stock")
         if ct.has_stock:
             self.ticker = ct.ticker
         else:
-            raise ValueError(f"This ticker {ticker} doesn't have \
-                stock data in sources.")
-        
+            raise ValueError(
+                f"This ticker {ticker} doesn't have \
+                stock data in sources."
+            )
+
         self.first_trade_date = ct.get_first_trade_date()
         self._yf = ct._yf
 
         if frequency is None:
-            self.frequency = 'daily'
+            self.frequency = "daily"
         else:
             self.frequency = self._validate_frequency(frequency)
 
         today = datetime.datetime.today()
-        
+
         if end_date is None:
-            self.end_date = today.strftime('%Y-%m-%d')
+            self.end_date = today.strftime("%Y-%m-%d")
         else:
             self.end_date = _validate_date(end_date)
-        
+
         if start_date is None:
             # just make the default start time as 3 years ago for now
             # or the first trade date, whichever is later
             three_yrs_ago = today - relativedelta(years=3)
             self.start_date = max(
-                three_yrs_ago.strftime('%Y-%m-%d'), 
+                three_yrs_ago.strftime("%Y-%m-%d"), 
                 self.first_trade_date
-                )
+            )
         else:
             self.start_date = max(
                 _validate_date(start_date), 
                 self.first_trade_date
-                )
+            )
 
         self._check_date_logic()
 
         self._stock_obj = None
         self._set_obj()
-        
+
         self._stock = None
         self._dividend = None
         self._split = None
-        self._colname_date = 'formatted_date'
+        self._colname_date = "formatted_date"
 
     def _set_obj(self):
         """
         Pull the stock info from YahooFinancials object.
         """
         self._stock_obj = self._yf.get_historical_price_data(
-            self.start_date, 
-            self.end_date, 
-            self.frequency
-            )
+            self.start_date, self.end_date, self.frequency
+        )
 
     def _pull_stock(self):
         """
         Extract the stock info and format it to pandas dataframe.
         """
         self._stock = pd.DataFrame(
-            self._stock_obj[self.ticker]['prices']
-            )
+            self._stock_obj[self.ticker]["prices"])
         self._stock[self._colname_date] = pd.to_datetime(
             self._stock[self._colname_date]
-            )
-        #ToDo: down cast float64 to float32
-    
+        )
+        # ToDo: down cast float64 to float32
+
     def _pull_dividend(self):
         """
         Extract the dividend info and format it to pandas dataframe.
         """
         self._dividend = pd.DataFrame(
-            self._stock_obj[self.ticker]['eventsData']['dividends']
-            ).transpose()
+            self._stock_obj[self.ticker]["eventsData"]["dividends"]
+        ).transpose()
         self._dividend[self._colname_date] = pd.to_datetime(
             self._dividend[self._colname_date]
-            )
-        self._dividend['amount'] = self._dividend[
-            'amount'
-            ].astype(np.float32)
+        )
+        self._dividend["amount"] = self._dividend[
+            "amount"].astype(np.float32)
 
     def _pull_split(self):
         """
-        Extract the stock split info and format it to pandas 
+        Extract the stock split info and format it to pandas
         dataframe.
         """
         if len(
-            self._stock_obj[self.ticker]['eventsData']['splits']
-            )>0:
+            self._stock_obj[self.ticker]["eventsData"]["splits"]
+            ) > 0:
             self._split = pd.DataFrame(
-                self._stock_obj[self.ticker]['eventsData']['splits']
-                ).transpose()
+                self._stock_obj[self.ticker]["eventsData"]["splits"]
+            ).transpose()
             self._split[self._colname_date] = pd.to_datetime(
                 self._split[self._colname_date]
-                )
+            )
         else:
-            warnings.warn(f"There're no split events in the \
+            warnings.warn(
+                f"There're no split events in the \
                 specified timeframe ({self.start_date} to \
-                    {self.end_date}).")
-    
+                    {self.end_date})."
+            )
+
     def _validate_frequency(self, obj):
         """
         Validate the data type being string and the value is
@@ -637,13 +655,15 @@ class StockData:
         Raises
         ------
         TypeError
-            * If the input is not one of 'daily', 'weekly', 
+            * If the input is not one of 'daily', 'weekly',
               'monthly'
         """
         obj = _validate_type_str(obj)
-        if obj not in ('daily', 'weekly', 'monthly'):
-            raise ValueError("Parameter frequency can only be one \
-                of the element of ('daily', 'weekly', 'monthly').")
+        if obj not in ("daily", "weekly", "monthly"):
+            raise ValueError(
+                "Parameter frequency can only be one \
+                of the element of ('daily', 'weekly', 'monthly')."
+            )
         else:
             return obj
 
@@ -657,10 +677,12 @@ class StockData:
             If start_date is later than the end_date.
         """
         if self.end_date < self.start_date:
-            raise ValueError(f"Start date (current value \
+            raise ValueError(
+                f"Start date (current value \
                 {self.start_date}) must be earlier than end date \
-                    (current value {self.end_date}).")
-    
+                    (current value {self.end_date})."
+            )
+
     def get_stock(self):
         """
         Get the dataframe that contains the stock time series.
@@ -700,9 +722,10 @@ class StockData:
             self._pull_split()
         return self._split
 
+
 class StructuralChange:
     """
-    Main class to calculate the bayesian structural time series 
+    Main class to calculate the bayesian structural time series
     model based on the stock time series and the financial
     statement post date. The goal is to analyze whether there're
     statistical significance on the changes of the stock price
@@ -711,7 +734,7 @@ class StructuralChange:
     Parameters
     ----------
     df : pd.DataFrame
-        A pandas dataframe that has the stock time series 
+        A pandas dataframe that has the stock time series
         information. The index must be datetime information.
         The datetime must also be resampled to fill in the
         gaps between dates.
@@ -727,11 +750,11 @@ class StructuralChange:
     >>> ticker = 'AAPL'
     >>> sd = StockData(ticker)
     >>> df_stock = sd.get_stock()
-    
+
     Do some filtering and resampling
     >>> df_stock = df_stock.loc[:,[fsd._colname_date,'close']]
     >>> df_stock_fill = df_stock.drop_duplicates(
-            subset=fsd._colname_date, 
+            subset=fsd._colname_date,
             keep='last'
             ).set_index(
                 fsd._colname_date
@@ -739,10 +762,10 @@ class StructuralChange:
     >>> df_stock_fill = df_stock_fill.resample(
             'D'
             ).fillna('nearest')
-    
+
     Specify the list of dates of interest
     >>> change_dt_list = ['2022-02-03','2021-12-09']
-    
+
     Start to use this class
     >>> sc = StructuralChange(df_stock_fill, change_dt_list)
     >>> sc.analyze()
@@ -752,28 +775,26 @@ class StructuralChange:
     >>> sc.plot(change_dt_list[0])
     >>> sc.plot(change_dt_list[1])
     """
-    def __init__(self
-        ,df:pd.DataFrame
-        ,possible_date_list:List[str]
+
+    def __init__(
+        self, 
+        df: pd.DataFrame, 
+        possible_date_list: List[str]
         ) -> None:
         self._df = _validate_dtype_df(df)
-        #ToDo: check df index as datetime
-        #ToDo: check date list is list of str
-        #?? Do I want to make sure that df only has one column?
+        # ToDo: check df index as datetime
+        # ToDo: check date list is list of str
+        # ?? Do I want to make sure that df only has one column?
         self.possible_date_list = possible_date_list
 
-        self._df_index_min = self._df.index.min().strftime(
-            "%Y-%m-%d"
-            )
-        self._df_index_max = self._df.index.max().strftime(
-            "%Y-%m-%d"
-            )
+        self._df_index_min = self._df.index.min().strftime("%Y-%m-%d")
+        self._df_index_max = self._df.index.max().strftime("%Y-%m-%d")
 
-        self._df_summary= None
+        self._df_summary = None
 
         self._ci_dict = {}
-        
-    def _analyze_one_date(self, dt:str):
+
+    def _analyze_one_date(self, dt: str):
         """
         Construct the bayesian structural time series model
         for one date of interest.
@@ -790,18 +811,20 @@ class StructuralChange:
             A pandas dataframe that records the key information
             for the summary.
         """
-        dt_m1 = (datetime.datetime.strptime(dt, '%Y-%m-%d') \
-            - datetime.timedelta(days=1)).strftime("%Y-%m-%d")
-        if self._df_index_min < dt_m1 and self._df_index_max>dt:
-            pre_period=[self._df_index_min, dt_m1]
-            post_period=[dt, self._df_index_max]
+        dt_m1 = (
+            datetime.datetime.strptime(dt, "%Y-%m-%d") \
+                - datetime.timedelta(days=1)
+        ).strftime("%Y-%m-%d")
+        if self._df_index_min < dt_m1 and self._df_index_max > dt:
+            pre_period = [self._df_index_min, dt_m1]
+            post_period = [dt, self._df_index_max]
 
             ci = CausalImpact(self._df, pre_period, post_period)
             self._ci_dict[dt] = ci
 
-            res = ci.summary_data.loc[:,'average'].T
-            res['p-value'] = ci.p_value
-            res['change_date'] = dt
+            res = ci.summary_data.loc[:, "average"].T
+            res["p-value"] = ci.p_value
+            res["change_date"] = dt
             return res
         else:
             return None
@@ -818,10 +841,9 @@ class StructuralChange:
                 res_list.append(res)
 
         self._df_summary = pd.concat(
-            res_list, 
-            axis=1).T.set_index('change_date')
+            res_list, axis=1).T.set_index("change_date")
 
-    def plot(self, dt:str, show:bool = True):
+    def plot(self, dt: str, show: bool = True):
         """
         Produce the causal change plots by the date of interest.
 
@@ -834,7 +856,7 @@ class StructuralChange:
             Indicate whether to show the plot or not.
             By default True and it will call plt.show()
         """
-        self._ci_dict[dt].plot(show = show)
+        self._ci_dict[dt].plot(show=show)
 
     def summary(self):
         """
@@ -844,12 +866,14 @@ class StructuralChange:
         Returns
         -------
         pd.DataFrame
-            A pandas dataframe that has the summary info for 
+            A pandas dataframe that has the summary info for
             all the possible dates of interest.
         """
         if self._df_summary is None:
-            warnings.warn("No summary info yet, might want to call \
-                obj.analyze() first.")
+            warnings.warn(
+                "No summary info yet, might want to call \
+                obj.analyze() first."
+            )
         else:
             return self._df_summary
 
@@ -874,9 +898,9 @@ class FuzzyMatch:
     First generate some sample data
     >>> df = pd.DataFrame(
             {'Company Name':
-                ["American Airlines", 
-                "Apple Inc.", 
-                "Amazon", 
+                ["American Airlines",
+                "Apple Inc.",
+                "Amazon",
                 "Alphabet"],
             'Ticker':
                 ["AAL",
@@ -888,28 +912,39 @@ class FuzzyMatch:
         )
     >>> fm = FuzzyMatch(df)
     >>> df_res = fm.match("apple")
-    
+
     This would return a dataframe with the company name,
     ticker, and the match score scale 0-100 where 100
     being the highest.
     """
+
     def __init__(
-        self, 
-        df:pd.DataFrame,
-        match_by_col:str = 'Company Name',
-        ) -> None:
+        self,
+        df: pd.DataFrame,
+        match_by_col: str = "Company Name",
+    ) -> None:
         self.df_company = _validate_dtype_df(df)
         self.match_by_col = _validate_type_str(match_by_col)
         if match_by_col in self.df_company.columns:
-            self.list_choices = self.df_company[self.match_by_col].to_list()
+            self.list_choices = self.df_company[
+                self.match_by_col].to_list()
         else:
-            raise ValueError(f"Colname {self.match_by_col} does not exist \
-                in the input dataframe.")
-    
-    def match(self, input_text:str, num_result:int = 3):
-        res = process.extract(input_text, self.list_choices, limit=num_result)
-        result = pd.DataFrame(res, columns = [self.match_by_col,'Matching Score'])
-        return result.merge(self.df_company, on=self.match_by_col, how='inner')
+            raise ValueError(
+                f"Colname {self.match_by_col} does not exist \
+                in the input dataframe."
+            )
+
+    def match(self, input_text: str, num_result: int = 3):
+        res = process.extract(
+            input_text, self.list_choices, limit=num_result)
+        result = pd.DataFrame(
+            res, 
+            columns=[self.match_by_col, "Matching Score"]
+            )
+        return result.merge(
+            self.df_company, 
+            on=self.match_by_col, 
+            how="inner")
 
 
 def _validate_dtype_df(obj):
@@ -922,10 +957,13 @@ def _validate_dtype_df(obj):
         * If the input is not pandas dataframe type
     """
     if not isinstance(obj, pd.DataFrame):
-        raise TypeError(f"Input needs to be pandas DataFrame \
-            object. Received {type(obj)} instead.")
+        raise TypeError(
+            f"Input needs to be pandas DataFrame \
+            object. Received {type(obj)} instead."
+        )
     else:
         return obj
+
 
 def _validate_type_str(obj):
     """
@@ -937,10 +975,13 @@ def _validate_type_str(obj):
         * If the input is not string type
     """
     if not isinstance(obj, str):
-        raise TypeError(f"Input {obj} type must be str. \
-            Received {type(obj)} instead.")
+        raise TypeError(
+            f"Input {obj} type must be str. \
+            Received {type(obj)} instead."
+        )
     else:
         return obj
+
 
 def _validate_date(obj):
     """
@@ -953,8 +994,10 @@ def _validate_date(obj):
     """
     obj = _validate_type_str(obj)
     try:
-        _ = datetime.datetime.strptime(obj, '%Y-%m-%d')
+        _ = datetime.datetime.strptime(obj, "%Y-%m-%d")
         return obj
     except:
-        raise ValueError("Input {obj} value format must be \
-            YYYY-MM-DD.")
+        raise ValueError(
+            "Input {obj} value format must be \
+            YYYY-MM-DD."
+        )
