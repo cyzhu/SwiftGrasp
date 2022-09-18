@@ -39,7 +39,7 @@ Now you should be able to see the web app up and running locally with the URL di
 * Functionality to input ticker by pre set dropdown list
 * Functionality to input ticker by text input
 * Functionality to check whether ticker is valid
-* Functionlity to pull the financial statement data
+* Functionality to pull the financial statement data
   * Balance sheet
   * Income statement
   * Cash statement
@@ -50,7 +50,7 @@ Now you should be able to see the web app up and running locally with the URL di
   * Drag plot
   * Input of what columns are of user's interest
   * Input of time range for data pulling and relationship calculation
-* Functionality to perform causual inference of whether there're statistical significant change by the statement posting date, achieved by Bayesian structural time series model.
+* Functionality to perform causal inference of whether there're statistical significant change by the statement posting date, achieved by Bayesian structural time series model.
 * Front end interface by streamlit, deployed locally.
 ### ToDo
 * Need to create an auto system to calculate/update the structural baysesian time series.
@@ -58,3 +58,9 @@ Now you should be able to see the web app up and running locally with the URL di
 * Add analytic support for financial statement date (hopefully find more data).
 * Deploy to Heroku.
 * Consider adding fuzzy match feature on user text input.
+* Add unit tests.
+
+
+## Reference
+* NASDAQ listing data source: https://github.com/datasets/nasdaq-listings
+* NYSE and other listing data sources: https://github.com/datasets/nyse-other-listings

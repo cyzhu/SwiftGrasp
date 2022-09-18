@@ -4,7 +4,7 @@ import datetime
 from dateutil.relativedelta import relativedelta
 # import matplotlib.pyplot as plt
 
-# import pandas as pd
+import pandas as pd
 # import numpy as np
 import os
 import pickle
@@ -15,7 +15,7 @@ warnings.filterwarnings("ignore")
 
 import sys
 sys.path.insert(0, '../src/SwiftGrasp')
-from utils import *
+from utils import CheckTicker, FinancialStatementData, StockData, FuzzyMatch
 from plot_helper import line_plots, line_bar
 
 cach_folder = './cached'
@@ -40,6 +40,8 @@ st.markdown("_Notes: If you have inputs on both, the text input \
     from **Option 2** will be used._")
 st.text("\n")
 
+fm = None
+
 ticker_selectbox=st.selectbox(
     label = 'Option 1: Choose a ticker \
             from the dropdown list'
@@ -49,7 +51,8 @@ ticker_selectbox=st.selectbox(
     )
 
 ticker_text = st.text_input(label = "Option 2: Input a ticker \
-    here, example: AAPL, MSFT, GOOGL, etc."
+    here, e.g., AAPL. Or input a name of a company to perform \
+        fuzzy match."
     ,value = ""
     )
 
@@ -65,7 +68,21 @@ ticker = ct.ticker
 
 if not (ct.has_stock or ct.has_statement):
     st.markdown(f"_This ticker {ticker} doesn't have any data.\
-        Please check the spelling or choose another ticker._")
+        Are you trying to find the tickers from below:_")
+
+    if fm is None:
+        df_company = pd.read_csv(
+            os.path.join(
+                "./src/SwiftGrasp/resources",
+                "processed_company_names.csv"
+                )
+            )
+        fm = FuzzyMatch(
+            df = df_company
+            )
+    
+    st.write(fm.match(ticker))
+    
 else:
     first_trade_date = ct.get_first_trade_date()
 
@@ -112,7 +129,9 @@ if ct.has_statement:
         fsd = load_data(fname)
     else:
         fsd = FinancialStatementData(ticker, frequency=fd_frequency)
-        with open(os.path.join(cach_folder, f"{fname}.p"), 'wb') as pf:
+        with open(
+            os.path.join(cach_folder, f"{fname}.p"), 'wb'
+            ) as pf:
             pickle.dump(fsd,pf,protocol=4)
 
     df_financial = fsd.get_all_data()
@@ -123,10 +142,12 @@ if ct.has_statement:
     st.write(df_financial)
 
     # make some plots
-    options0=st.multiselect(label = 'Choose financial data to display:'
-                    ,options=[col for col in df_financial.columns 
-                        if col !=date_col]
-                    ,default = ['totalAssets','cash','netIncome'])
+    options0=st.multiselect(
+        label = 'Choose financial data to display:'
+        ,options=[col for col in df_financial.columns 
+            if col !=date_col]
+        ,default = ['totalAssets','cash','netIncome']
+        )
 
     op10 = [col for col in options0 if max(df_financial[col]) > 1e6]
     op20 = [col for col in options0 if max(df_financial[col]) <= 1e6]
@@ -137,8 +158,9 @@ if ct.has_statement:
     )
 else:
     change_dt_list = None
-    st.markdown("_The ticker you chose doesn't have financial statement \
-        data. Therefore nothing will be shown in this section._")
+    st.markdown("_The ticker you chose doesn't have financial \
+        statement data. Therefore nothing will be shown in this \
+            section._")
 
 st.subheader("3. Stock data")
 
@@ -148,17 +170,20 @@ if ct.has_stock:
         first_trade_date, 
         '%Y-%m-%d').date()
 
-    start_time, end_time = st.slider("Select the time range (inclusive) \
-        of the stock:"
+    start_time, end_time = st.slider("Select the time range \
+        (inclusive) of the stock:"
         ,min_value = first_trade_date_format
         ,max_value = today
         ,value=(
-            max(today-relativedelta(years=3),first_trade_date_format),
+            max(
+                today-relativedelta(years=3),
+                first_trade_date_format
+                ),
             today
             )
         )
 
-    st.write("You selected datetime between:", start_time,' and ', 
+    st.write("You selected datetime between:", start_time,' and ',
         end_time)
 
     stock_frequency = st.radio(
@@ -181,9 +206,11 @@ if ct.has_stock:
 
 
     # make some plots
-    options_stock=st.multiselect(label = 'Choose stock data to display:'
-                    ,options=['high','low','open','close','volume']
-                    ,default = ['open','close','volume'])
+    options_stock=st.multiselect(
+        label = 'Choose stock data to display:'
+        ,options=['high','low','open','close','volume']
+        ,default = ['open','close','volume']
+        )
 
     if 'volume' in options_stock:
         col_y2 = 'volume'
@@ -232,18 +259,20 @@ if ct.has_stock and ct.has_statement:
             )
 
         fname = f'struc_change_{ticker}_{fd_frequency_abbr}_fig{struc_chg_selectbox}'
+        
         fig = load_data(fname)
         st.pyplot(fig)
     else:
-        st.markdown("_The ticker you chose hasn't been processed yet. \
-                It was just submitted and should be ready in ~10 \
-                minutes. Please check again later._")
+        st.markdown("_The ticker you chose hasn't been processed \
+            yet. It was just submitted and should be ready in ~10 \
+            minutes. Please check again later._")
         #ToDo: insert a request to process the data to database here
         # currently it's mannualy run and saved in a manual manner
 else:
-    st.markdown("_The ticker you chose either not have stock data or \
-        not financial statement data or both. Therefore it won't have \
-        a analysis on the relationship of stock and financial statement._")
+    st.markdown("_The ticker you chose either not have stock data \
+        or not financial statement data or both. Therefore it won't \
+        have a analysis on the relationship of stock and financial \
+        statement._")
 
 
 st.subheader('Contact')

@@ -7,7 +7,7 @@ from dateutil.relativedelta import relativedelta
 import warnings
 
 from causalimpact import CausalImpact
-
+from thefuzz import process
 
 class CheckTicker:
     """
@@ -852,6 +852,22 @@ class StructuralChange:
                 obj.analyze() first.")
         else:
             return self._df_summary
+
+
+class FuzzyMatch:
+    def __init__(
+        self, 
+        df:pd.DataFrame,
+        match_by_col:str = 'Company Name',
+        ) -> None:
+        self.df_company = df
+        self.match_by_col = match_by_col
+        self.list_choices = self.df_company[self.match_by_col].to_list()
+    
+    def match(self, input_text:str, num_result:int = 3):
+        res = process.extract(input_text, self.list_choices, limit=num_result)
+        result = pd.DataFrame(res, columns = [self.match_by_col,'Matching Score'])
+        return result.merge(self.df_company, on=self.match_by_col, how='inner')
 
 
 def _validate_dtype_df(obj):

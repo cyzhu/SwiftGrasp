@@ -20,6 +20,8 @@ yahoofinancials = "^1.6"
 tfcausalimpact = "^0.0.11"
 streamlit = "^1.11.1"
 bokeh = "^2.4.3"
+thefuzz = "^0.19.0"
+python-Levenshtein = "^0.12.2"
 
 [tool.poetry.dev-dependencies]
 
