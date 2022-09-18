@@ -1,0 +1,6 @@
+__pycache__/
+notebooks/test.ipynb
+tests/test.py
+cached/
+src/SwiftGrasp/resources/*.csv
+.coverage
