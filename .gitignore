@@ -4,3 +4,4 @@ tests/test.py
 cached/
 src/SwiftGrasp/resources/*.csv
 .coverage
+.pytest_cache/

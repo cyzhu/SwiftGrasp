@@ -7,6 +7,7 @@ A web app to help you quickly digest the key financial statement information and
 ```
 pip install poetry
 ```
+Or, install as in the official website of Poetry.
 2. Make sure that you're on the `base` environment if not already, you can do the command below to get to the `base` environment if you're on some other conda environment
 ```
 conda deactivate
@@ -37,7 +38,7 @@ Now you should be able to see the web app up and running locally with the URL di
 ## Testing
 After making changes to the code, run below lines from the main directory.
 ```
-python -m pytest --cov=src.SwiftGrasp tests/
+python -m pytest --cov=src tests/
 ```
 
 ## Project Status

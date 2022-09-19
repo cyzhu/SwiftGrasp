@@ -1,0 +1,5 @@
+[run]
+omit = 
+    src/SwiftGrasp/__init__.py
+    src/SwiftGrasp/save_to_db.py
+    src/SwiftGrasp/cach_data.py
