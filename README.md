@@ -37,7 +37,7 @@ Now you should be able to see the web app up and running locally with the URL di
 ## Testing
 After making changes to the code, run below lines from the main directory.
 ```
-python -m pytest --cov=SwiftGrasp tests/
+python -m pytest --cov=src.SwiftGrasp tests/
 ```
 
 ## Project Status
