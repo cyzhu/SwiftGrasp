@@ -13,7 +13,7 @@ authors = ["Chongyang Zhu <cyzhu95@gmail.com>"]
 python = "~3.9"
 pandas = "<=1.3.5"
 numpy = "^1.19.5"
-matplotlib = "^3.4.2"
+matplotlib = ">=3.4.2,<3.6"
 seaborn = "^0.11.2"
 plotly = "^5.1.0"
 yahoofinancials = "^1.6"

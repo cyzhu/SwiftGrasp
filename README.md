@@ -59,15 +59,46 @@ python -m pytest --cov=src tests/
   * Input of time range for data pulling and relationship calculation
 * Functionality to perform causal inference of whether there're statistical significant change by the statement posting date, achieved by Bayesian structural time series model.
 * Front end interface by streamlit, deployed locally.
+* Consider adding fuzzy match feature on user text input.
+
 ### ToDo
 * Need to create an auto system to calculate/update the structural baysesian time series.
 * ^Maybe create a database to store some calculated data will be helpful to the first bullet point.
 * Add analytic support for financial statement date (hopefully find more data).
 * Deploy to Heroku.
-* Consider adding fuzzy match feature on user text input.
 * Add unit tests.
 
+## Project structure
 
+```
+SwiftGraspWebApp
+├─ .flake8
+├─ .gitignore
+├─ .pre-commit-config.yaml
+├─ README.md
+├─ README.pdf
+├─ notebooks
+├─ poetry.lock
+├─ pyproject.toml
+├─ setup.py
+├─ src
+│  └─ SwiftGrasp
+│     ├─ __init__.py
+│     ├─ app.py
+│     ├─ cach_data.py
+│     ├─ plot_helper.py
+│     ├─ preprocess_listing.py
+│     ├─ resources
+│     │  ├─ fuzzy_match.p
+│     │  ├─ nasdaq-listed.csv
+│     │  ├─ nyse-listed.csv
+│     │  ├─ other-listed.csv
+│     │  └─ processed_company_names.csv
+│     ├─ save_to_db.py
+│     └─ utils.py
+└─ tests
+   └─ test_utils.py
+```
 ## Reference
 * NASDAQ listing data source: https://github.com/datasets/nasdaq-listings
 * NYSE and other listing data sources: https://github.com/datasets/nyse-other-listings
