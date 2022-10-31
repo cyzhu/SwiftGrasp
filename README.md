@@ -10,6 +10,7 @@ Notes: this is my graduation applied project for my master's program in Computer
 pip install poetry
 ```
 Or, install as in the official website of Poetry.
+
 2. Make sure that you're on the `base` environment if not already, you can do the command below to get to the `base` environment if you're on some other conda environment
 ```
 conda deactivate
