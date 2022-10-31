@@ -2,6 +2,8 @@
 
 A web app to help you quickly digest the key financial statement information and the stock performance for a publicly traded company.
 
+Notes: this is my graduation applied project for my master's program in Computer and Information Sciences major from Harrisburg University.
+
 ## Installation Guide
 1. Install `poetry` if you don't have it yet
 ```
