@@ -1,6 +1,5 @@
 import os
 import pickle
-import matplotlib.pyplot as plt
 from utils import FinancialStatementData, StockData, StructuralChange
 
 cach_folder = "./cached"
@@ -17,10 +16,14 @@ def load_data(filename: str):
     return obj
 
 
-def get_fsd(ticker, frequency: str = "Q"):
+def get_fsd(
+    ticker,
+    frequency: str = "Q",
+    delete_if_exists: bool = False,
+):
     fname = f"fsd_{ticker}_{frequency}"
 
-    if os.path.exists(os.path.join(cach_folder, f"{fname}.p")):
+    if os.path.exists(os.path.join(cach_folder, f"{fname}.p")) and not delete_if_exists:
         fsd = load_data(fname)
     else:
         fsd = FinancialStatementData(  # fmt: off
@@ -73,18 +76,26 @@ def cach_struc_chg(
     # save plots
     for td in sc._ci_dict.keys():
         ci_select = sc._ci_dict.get(td)
-        ci_select.plot(show=False)
-        fig = plt.gcf()
 
-        fname = f"struc_change_{ticker}_{frequency}_fig{td}"
-        with open(os.path.join(cach_folder, f"{fname}.p"), "wb") as pf:
-            pickle.dump(fig, pf, protocol=4)
+        ci_select.plot(show=False)
+
+        fname = os.path.join(
+            cach_folder, f"fig_struc_change_{ticker}_{frequency}_{td}.png"
+        )
+
+        os.rename("temp.png", fname)
 
 
 if __name__ == "__main__":
-    for ticker in ("AAPL", "AMZN"):
-        frequency = "Y"
-
-        fsd = get_fsd(ticker, frequency)
-        df_stock_fill, change_dt_list = get_stock(ticker, fsd)
-        cach_struc_chg(ticker, df_stock_fill, change_dt_list, frequency)
+    for ticker in (
+        "AAPL",
+        "AMZN",
+        "GOOGL",
+        "MSFT",
+        "BILI",
+    ):
+        for frequency in ("Y", "Q"):
+            print(f"processing: {ticker}, {frequency}")
+            fsd = get_fsd(ticker, frequency)
+            df_stock_fill, change_dt_list = get_stock(ticker, fsd)
+            cach_struc_chg(ticker, df_stock_fill, change_dt_list, frequency)
