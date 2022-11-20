@@ -297,12 +297,17 @@ if ct.has_stock and ct.has_statement:
 
         # need to break this to two lines
         # fmt: off
-        fname = f"struc_change_{ticker}_{fd_frequency_abbr}" \
-            + f"_fig{struc_chg_selectbox}"
+        fname = f"fig_struc_change_{ticker}_{fd_frequency_abbr}" \
+            + f"_{struc_chg_selectbox}.png"
         # fmt: on
 
-        fig = load_data(fname)
-        st.pyplot(fig)
+        from PIL import Image
+
+        image = Image.open(os.path.join(cach_folder, fname))
+
+        st.image(image)
+        # fig = load_data(fname)
+        # st.pyplot(fig)
     else:
         st.markdown(
             "_The ticker you chose hasn't been processed \
