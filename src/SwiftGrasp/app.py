@@ -1,17 +1,15 @@
-# from markdown import markdown
 import streamlit as st
 import datetime
 from dateutil.relativedelta import relativedelta
-
-# import matplotlib.pyplot as plt
-
-# import pandas as pd
+import pandas as pd
 
 # import numpy as np
 import os
 import pickle
 import sys
-
+from PIL import Image
+from sqlalchemy import create_engine
+import io
 import warnings
 
 warnings.filterwarnings("ignore")
@@ -282,33 +280,25 @@ else:
 st.subheader("4. Structural change - causal inference")
 
 if ct.has_stock and ct.has_statement:
-    fname = f"struc_change_{ticker}_{fd_frequency_abbr}_summary"
-    if os.path.exists(os.path.join(cach_folder, f"{fname}.p")):
-        sc_summary = load_data(fname)
+    # display summary table
+    user = st.secrets["postgres"]["user"]
+    password = st.secrets["postgres"]["password"]
+    database = st.secrets["postgres"]["database"]
+    port = st.secrets["postgres"]["port"]
+    engine = create_engine(
+        f"postgresql://{user}:{password}@localhost:{port}/{database}"
+    )
 
-        st.write("Structural change summary")
-        st.write(sc_summary)
+    df = pd.read_sql(
+        f"""
+        select * from public.structure_change_summary
+        where ticker = '{ticker}'
+                and frequency = '{fd_frequency_abbr}';
+        """,
+        engine,
+    )
 
-        struc_chg_selectbox = st.selectbox(
-            label="Select a possible change \
-                date to view the plots",
-            options=change_dt_list,
-        )
-
-        # need to break this to two lines
-        # fmt: off
-        fname = f"fig_struc_change_{ticker}_{fd_frequency_abbr}" \
-            + f"_{struc_chg_selectbox}.png"
-        # fmt: on
-
-        from PIL import Image
-
-        image = Image.open(os.path.join(cach_folder, fname))
-
-        st.image(image)
-        # fig = load_data(fname)
-        # st.pyplot(fig)
-    else:
+    if df.empty:
         st.markdown(
             "_The ticker you chose hasn't been processed \
             yet. It was just submitted and should be ready in ~10 \
@@ -316,6 +306,30 @@ if ct.has_stock and ct.has_statement:
         )
         # ToDo: insert a request to process the data to database here
         # currently it's mannualy run and saved in a manual manner
+    else:
+        st.write(df)
+
+        # grab the plots
+        struc_chg_selectbox = st.selectbox(
+            label="Select a possible change \
+                date to view the plots",
+            options=df["change_date"].unique(),
+        )
+
+        df2 = pd.read_sql(
+            f"""
+            select png from public.structure_change_plots
+            where ticker = '{ticker}'
+                and frequency = '{fd_frequency_abbr}'
+                and statement_date = '{struc_chg_selectbox}';
+            """,
+            engine,
+        )
+
+        img = df2.loc[0, "png"]
+        image = Image.open(io.BytesIO(img))
+        st.image(image)
+
 else:
     st.markdown(
         "_The ticker you chose either not have stock data \

@@ -1,8 +1,9 @@
 __pycache__/
 notebooks/test.ipynb
 tests/test.py
-cached/archive/
+cached/
 src/SwiftGrasp/resources/*.csv
 .coverage
 .pytest_cache/
 README.pdf
+.streamlit/secrets.toml

@@ -63,23 +63,82 @@ python -m pytest --cov=src tests/
 * Functionality to perform causal inference of whether there're statistical significant change by the statement posting date, achieved by Bayesian structural time series model.
 * Front end interface by streamlit, deployed locally.
 * Consider adding fuzzy match feature on user text input.
+* Add unit tests.
+* Improved structural change load speed.
+* Deployed to streamlit cloud: [https://swiftgrasp.streamlit.app/](https://swiftgrasp.streamlit.app/)
+* Create a database to store some calculated data will be helpful to the first bullet point.
 
 ### ToDo
-* Need to create an auto system to calculate/update the structural baysesian time series.
-* ^Maybe create a database to store some calculated data will be helpful to the first bullet point.
-* Add analytic support for financial statement date (hopefully find more data).
-* Deploy to Heroku.
-* Add unit tests.
+* Set up cron jobs to calculate/update the structural baysesian time series.
 
 ## Project structure
-
 ```
 SwiftGraspWebApp
 ├─ .flake8
 ├─ .gitignore
 ├─ .pre-commit-config.yaml
+├─ .streamlit
+│  └─ secrets.toml
+├─ .vscode
+│  └─ launch.json
 ├─ README.md
-├─ README.pdf
+├─ cached
+│  ├─ fig_struc_change_AAPL_Q_2021-09-25.png
+│  ├─ fig_struc_change_AAPL_Q_2021-12-25.png
+│  ├─ fig_struc_change_AAPL_Q_2022-03-26.png
+│  ├─ fig_struc_change_AAPL_Q_2022-06-25.png
+│  ├─ fig_struc_change_AAPL_Q_2022-09-24.png
+│  ├─ fig_struc_change_AAPL_Y_2020-09-26.png
+│  ├─ fig_struc_change_AAPL_Y_2021-09-25.png
+│  ├─ fig_struc_change_AAPL_Y_2022-09-24.png
+│  ├─ fig_struc_change_AMZN_Q_2021-12-31.png
+│  ├─ fig_struc_change_AMZN_Q_2022-03-31.png
+│  ├─ fig_struc_change_AMZN_Q_2022-06-30.png
+│  ├─ fig_struc_change_AMZN_Q_2022-09-30.png
+│  ├─ fig_struc_change_AMZN_Y_2019-12-31.png
+│  ├─ fig_struc_change_AMZN_Y_2020-12-31.png
+│  ├─ fig_struc_change_AMZN_Y_2021-12-31.png
+│  ├─ fig_struc_change_BILI_Q_2021-09-30.png
+│  ├─ fig_struc_change_BILI_Q_2021-12-31.png
+│  ├─ fig_struc_change_BILI_Q_2022-03-31.png
+│  ├─ fig_struc_change_BILI_Q_2022-06-30.png
+│  ├─ fig_struc_change_BILI_Y_2019-12-31.png
+│  ├─ fig_struc_change_BILI_Y_2020-12-31.png
+│  ├─ fig_struc_change_BILI_Y_2021-12-31.png
+│  ├─ fig_struc_change_GOOGL_Q_2021-12-31.png
+│  ├─ fig_struc_change_GOOGL_Q_2022-03-31.png
+│  ├─ fig_struc_change_GOOGL_Q_2022-06-30.png
+│  ├─ fig_struc_change_GOOGL_Q_2022-09-30.png
+│  ├─ fig_struc_change_GOOGL_Y_2019-12-31.png
+│  ├─ fig_struc_change_GOOGL_Y_2020-12-31.png
+│  ├─ fig_struc_change_GOOGL_Y_2021-12-31.png
+│  ├─ fig_struc_change_MSFT_Q_2021-12-31.png
+│  ├─ fig_struc_change_MSFT_Q_2022-03-31.png
+│  ├─ fig_struc_change_MSFT_Q_2022-06-30.png
+│  ├─ fig_struc_change_MSFT_Q_2022-09-30.png
+│  ├─ fig_struc_change_MSFT_Y_2020-06-30.png
+│  ├─ fig_struc_change_MSFT_Y_2021-06-30.png
+│  ├─ fig_struc_change_MSFT_Y_2022-06-30.png
+│  ├─ fsd_AAPL_Q.p
+│  ├─ fsd_AAPL_Y.p
+│  ├─ fsd_AMZN_Q.p
+│  ├─ fsd_AMZN_Y.p
+│  ├─ fsd_BILI_Q.p
+│  ├─ fsd_BILI_Y.p
+│  ├─ fsd_GOOGL_Q.p
+│  ├─ fsd_GOOGL_Y.p
+│  ├─ fsd_MSFT_Q.p
+│  ├─ fsd_MSFT_Y.p
+│  ├─ struc_change_AAPL_Q_summary.p
+│  ├─ struc_change_AAPL_Y_summary.p
+│  ├─ struc_change_AMZN_Q_summary.p
+│  ├─ struc_change_AMZN_Y_summary.p
+│  ├─ struc_change_BILI_Q_summary.p
+│  ├─ struc_change_BILI_Y_summary.p
+│  ├─ struc_change_GOOGL_Q_summary.p
+│  ├─ struc_change_GOOGL_Y_summary.p
+│  ├─ struc_change_MSFT_Q_summary.p
+│  └─ struc_change_MSFT_Y_summary.p
 ├─ notebooks
 ├─ poetry.lock
 ├─ pyproject.toml
@@ -102,6 +161,8 @@ SwiftGraspWebApp
 └─ tests
    └─ test_utils.py
 ```
+
 ## Reference
 * NASDAQ listing data source: https://github.com/datasets/nasdaq-listings
 * NYSE and other listing data sources: https://github.com/datasets/nyse-other-listings
+

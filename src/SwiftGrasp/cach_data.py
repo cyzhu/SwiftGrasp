@@ -88,11 +88,11 @@ def cach_struc_chg(
 
 if __name__ == "__main__":
     for ticker in (
-        "AAPL",
-        "AMZN",
-        "GOOGL",
-        "MSFT",
-        "BILI",
+        "META",
+        "TSLA",
+        "NFLX",
+        "NVDA",
+        "DAL",
     ):
         for frequency in ("Y", "Q"):
             print(f"processing: {ticker}, {frequency}")
