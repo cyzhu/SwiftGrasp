@@ -1,7 +1,8 @@
 # ToDo: pull, ETL and save data to postgresql
 import datetime
 
-# import pickle
+import pickle
+
 # import numpy as np
 import pandas as pd
 
@@ -89,11 +90,19 @@ def prepare_df(cach_folder: str):
     return df.drop("filename", axis=1)
 
 
+def delete_saved_files(cach_folder):
+    for i in os.listdir(cach_folder):
+        if i.endswith(".png") or i.endswith("summary.p"):
+            os.remove(os.path.join(cach_folder, i))
+
+
 if __name__ == "__main__":
+    # ToDo: need to figure out the way to only insert into postgres when not exists
     cach_folder = "./cached"
+
     df = prepare_df(cach_folder)
+    print("*********Saving plots")
     print(df.head())
-    print(df.dtypes)
 
     table_name = "structure_change_plots"
     # create_table(table_name)
@@ -101,14 +110,18 @@ if __name__ == "__main__":
     insert_table(df, table_name)
     print(datetime.datetime.now())
 
-    # # save summary
-    # table_name = "structure_change_summary"
-    # for i in os.listdir(cach_folder):
-    #     if i.endswith("summary.p"):
-    #         ticker = i.split('_')[2]
-    #         freq = i.split('_')[3]
-    #         df = pickle.load(open(os.path.join(cach_folder,i),'rb')).reset_index()
-    #         df.insert(0,'ticker',ticker)
-    #         df.insert(1,'frequency',freq)
-    #         print(df.head(1))
-    #         insert_table(df, table_name)
+    # save summary
+    print("*********Saving summary")
+    table_name = "structure_change_summary"
+    for i in os.listdir(cach_folder):
+        if i.endswith("summary.p"):
+            ticker = i.split("_")[2]
+            freq = i.split("_")[3]
+            df = pickle.load(open(os.path.join(cach_folder, i), "rb")).reset_index()
+            df.insert(0, "ticker", ticker)
+            df.insert(1, "frequency", freq)
+            print(df.head(1))
+            insert_table(df, table_name)
+
+    print("*********Dropping saved files")
+    delete_saved_files(cach_folder)

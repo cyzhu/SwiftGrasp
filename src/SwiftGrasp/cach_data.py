@@ -29,8 +29,8 @@ def get_fsd(
         fsd = FinancialStatementData(  # fmt: off
             ticker, frequency_dict.get(frequency)  # fmt: off
         )
-        with open(os.path.join(cach_folder, f"{fname}.p"), "wb") as pf:
-            pickle.dump(fsd, pf, protocol=4)
+        # with open(os.path.join(cach_folder, f"{fname}.p"), "wb") as pf:
+        #     pickle.dump(fsd, pf, protocol=4)
 
     return fsd
 
